@@ -60,6 +60,6 @@ class ValkeyClient:
     @property
     def version(self):
         if self._version is None:
-            info = self._execute('info')
+            info = self._execute('info', 'server')
             self._version = info.get('valkey_version')
         return self._version

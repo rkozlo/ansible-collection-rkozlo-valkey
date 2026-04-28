@@ -41,3 +41,45 @@ jobs:
       - name: Run sanity tests
         run: ansible-test sanity --docker -v --color
         working-directory: ./ansible_collections/rkozlo/valkey
+
+  units:
+    runs-on: ubuntu-latest
+    name: Units (Ⓐ${{ matrix.ansible }})
+    strategy:
+      fail-fast: true
+      matrix:
+        ansible:
+          - stable-2.17
+          - stable-2.18
+          - stable-2.19
+          - stable-2.20
+          - devel
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+        with:
+          path: ./ansible_collections/rkozlo/valkey
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install ansible-base (${{ matrix.ansible }})
+        run: pip install https://github.com/ansible/ansible/archive/${{ matrix.ansible }}.tar.gz --disable-pip-version-check
+
+      - name: Instal valkey
+        run: pip install valkey
+
+      - name: Run unit test
+        run: ansible-test units -v --color --python 3.10 --docker --coverage
+        working-directory: ./ansible_collections/rkozlo/valkey
+
+      - name: Generate coverage report
+        run: ansible-test coverage xml -v --requirements --group-by command --group-by version
+        working-directory: ./ansible_collections/rkozlo/valkey
+
+      - uses: codecov/codecov-action@v6
+        with:
+          fail_ci_if_error: false
