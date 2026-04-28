@@ -1,0 +1,43 @@
+name: Plugins CI
+on:
+  push:
+    paths:
+      - 'plugins/**'
+      - 'tests/**'
+      - '.github/workflows/ansible-test-plugins.yml'
+  pull_request:
+    paths:
+      - 'plugins/**'
+      - 'tests/**'
+      - '.github/workflows/ansible-test-plugins.yml'
+
+jobs:
+  sanity:
+    name: "Sanity (Ansible: ${{ matrix.ansible }})"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ansible:
+          - stable-2.17
+          - stable-2.18
+          - stable-2.19
+          - stable-2.20
+          - devel
+    steps:
+
+      - name: Check out code
+        uses: actions/checkout@v6
+        with:
+          path: ansible_collections/rkozlo/valkey
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install ansible-base (${{ matrix.ansible }})
+        run: pip install https://github.com/ansible/ansible/archive/${{ matrix.ansible }}.tar.gz --disable-pip-version-check
+
+      - name: Run sanity tests
+        run: ansible-test sanity --docker -v --color
+        working-directory: ./ansible_collections/rkozlo/valkey
