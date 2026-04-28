@@ -1,0 +1,13 @@
+---
+namespace: rkozlo
+name: valkey
+version: 0.0.1
+readme: README.md
+authors:
+  - Rafał Kozłowski <rafalkozlowski07@gmail.com>
+    
+description: Ansible collection for Valkey.
+license: 
+ - GPL-3.0-or-later
+dependencies: {}
+repository: ""
