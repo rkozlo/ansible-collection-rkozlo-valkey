@@ -1,0 +1,225 @@
+- name: Create list of test cases for valkey_user module
+  ansible.builtin.set_fact:
+    test_cases:
+      - name: test_user
+        enabled: true
+        # passwords: []
+        # hashed_passwords: []
+        # commands: []
+        # keys: []
+        # channels: []
+        # selectors: []
+        # categories: []
+        # append_passwords: 
+        # append_keys:
+        # append_channels:
+        __expected_query: "Creating user 'test_user' with params username=test_user enabled=True passwords=[] hashed_passwords=[] reset_passwords=False reset_keys=False reset_channels=False"
+        __expected_alter: "Updating user 'test_user' with params username=test_user enabled=True passwords=[] hashed_passwords=[]"
+        __expected_drop: "Deleting user 'test_user'"
+
+- name: Create test user in check mode
+  rkozlo.valkey.valkey_user:
+    name: test_user
+  check_mode: true
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed == True
+      - result.executed_statements == ["Creating user 'test_user' with params username=test_user enabled=True passwords=[] hashed_passwords=[] reset_passwords=False reset_keys=False reset_channels=False categories=['-@all']"]
+
+- name: Check user is not created
+  rkozlo.valkey.valkey_exec:
+    command: ACL_GETUSER
+    params:
+      username: test_user
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      result.result == []
+
+- name: Create test user in real mode
+  rkozlo.valkey.valkey_user:
+    name: test_user
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed == True
+      - result.executed_statements == ["Creating user 'test_user' with params username=test_user enabled=True passwords=[] hashed_passwords=[] reset_passwords=False reset_keys=False reset_channels=False categories=['-@all']"]
+
+- name: Check user is created
+  rkozlo.valkey.valkey_exec:
+    command: ACL_GETUSER
+    params:
+      username: test_user
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.result | length > 0
+
+- name: Create test user in real mode - idempotency
+  rkozlo.valkey.valkey_user:
+    name: test_user
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed == False
+      - result.executed_statements == []
+
+# TO CLEAN
+# - name: Drop user in real mode
+#   rkozlo.valkey.valkey_user:
+#     name: test_user
+#     state: absent
+#   register: result
+#   check_mode: true
+# - name: Drop user in real mode
+#   rkozlo.valkey.valkey_user:
+#     name: test_user
+#     state: absent
+#   register: result
+
+- name: Alter test user in real_mode
+  rkozlo.valkey.valkey_user:
+    name: test_user
+    # passwords: ['test_password']
+  register: result
+
+##
+
+- name: Alter test user in check_mode
+  rkozlo.valkey.valkey_user:
+    name: test_user
+    passwords: ['test_password']
+  register: result
+  # check_mode: true
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed == True
+      - result.executed_statements == ["Updating user 'test_user' with params username=test_user enabled=True passwords=['+********'] hashed_passwords=[] reset_passwords=False reset_keys=False reset_channels=False categories=['-@all']"]
+
+- name: Check user is not altered
+  rkozlo.valkey.valkey_exec:
+    command: ACL_GETUSER
+    params:
+      username: test_user
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.result.passwords | length == 0
+
+- name: Alter test user in real_mode
+  rkozlo.valkey.valkey_user:
+    name: test_user
+    passwords: ['test_password']
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed == True
+      - result.executed_statements == ["Updating user 'test_user' with params username=test_user enabled=True passwords=['+********'] hashed_passwords=[] reset_passwords=False reset_keys=False reset_channels=False categories=['-@all']"]
+
+- name: Check user is altered
+  rkozlo.valkey.valkey_exec:
+    command: ACL_GETUSER
+    params:
+      username: test_user
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.result.passwords == ['10a6e6cc8311a3e2bcc09bf6c199adecd5dd59408c343e926b129c4914f3cb01']
+
+- name: Alter test user in real_mode - idempotency
+  rkozlo.valkey.valkey_user:
+    name: test_user
+    passwords: ['test_password']
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed == False
+      - result.executed_statements == []
+
+- name: Drop user in check_mode
+  rkozlo.valkey.valkey_user:
+    name: test_user
+    state: absent
+  register: result
+  check_mode: true
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed == True
+      - result.executed_statements == ["Deleting user 'test_user'."]
+
+- name: Check user is not dropped
+  rkozlo.valkey.valkey_exec:
+    command: ACL_GETUSER
+    params:
+      username: test_user
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.result | length > 0
+
+- name: Drop user in real mode
+  rkozlo.valkey.valkey_user:
+    name: test_user
+    state: absent
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed == True
+      - result.executed_statements == ["Deleting user 'test_user'."]
+
+- name: Check user is dropped
+  rkozlo.valkey.valkey_exec:
+    command: ACL_GETUSER
+    params:
+      username: test_user
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.result | length == 0
+
+- name: Drop user in real mode - idempotency
+  rkozlo.valkey.valkey_user:
+    name: test_user
+    state: absent
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed == False
+      - result.executed_statements == []
+
+- name: Iterate over test cases
+  vars:
+    _test_case: "{{ item }}"
+  ansible.builtin.include_tasks: test_sequence.yml
+  loop: "{{ test_cases }}"

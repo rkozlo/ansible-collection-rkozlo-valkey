@@ -1,0 +1,96 @@
+# Based on the official guide https://clickhouse.com/docs/en/install
+# - name: Install required packages
+#   ansible.builtin.apt:
+#     name:
+#     - apt-transport-https
+#     - ca-certificates
+#     - dirmngr
+#     - python3-debian
+#     state: present
+
+# - name: GPG part
+#   ansible.builtin.shell: >
+#     GNUPGHOME="/tmp/" gpg --no-default-keyring
+#     --keyring /usr/share/keyrings/clickhouse-keyring.gpg
+#     --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8919F6BD2B48D754 &&
+#     chmod +r /usr/share/keyrings/clickhouse-keyring.gpg
+
+# - name: Add repository
+#   ansible.builtin.deb822_repository:
+#     name: clickhouse
+#     types: deb
+#     uris: https://packages.clickhouse.com/deb
+#     suites: stable
+#     components:
+#       - main
+#     signed_by: /usr/share/keyrings/clickhouse-keyring.gpg
+#     state: present
+#     enabled: true
+
+# - name: Update apt cache
+#   ansible.builtin.apt:
+#     update_cache: yes
+
+- name: Install valkey
+  ansible.builtin.apt:
+    name:
+    - valkey
+    state: present
+
+# - name: Copy settings for default user
+#   ansible.builtin.copy:
+#     src: default_user.xml
+#     dest: /etc/clickhouse-server/users.d/default_user.xml
+#     owner: clickhouse
+#     group: clickhouse
+#     mode: '0600'
+
+# - name: Copy dictionary file
+#   ansible.builtin.copy:
+#     src: test_dictionary.xml
+#     dest: /etc/clickhouse-server/test_dictionary.xml
+#     owner: clickhouse
+#     group: clickhouse
+#     mode: '0600'
+
+# - name: Copy cluster file
+#   ansible.builtin.copy:
+#     src: cluster.xml
+#     dest: /etc/clickhouse-server/config.d/cluster.xml
+#     owner: clickhouse
+#     group: clickhouse
+#     mode: '0600'
+
+# - name: Configure clickhouse thread pool for container environment
+#   ansible.builtin.copy:
+#     dest: /etc/clickhouse-server/config.d/container.xml
+#     content: |
+#       <clickhouse>
+#           <max_thread_pool_size>1000</max_thread_pool_size>
+#           <background_schedule_pool_size>16</background_schedule_pool_size>
+#       </clickhouse>
+
+# - name: Configure clickhouse for testing named collections
+#   ansible.builtin.copy:
+#     dest: /etc/clickhouse-server/config.d/named_collections.xml
+#     content: |
+#       <clickhouse>
+#         <display_secrets_in_show_and_select>1</display_secrets_in_show_and_select>
+#       </clickhouse>
+
+- name: Enable and start valkey
+  ansible.builtin.systemd_service:
+    name: valkey
+    state: started
+    enabled: true
+
+# - name: Enable and start clickhouse keeper
+#   ansible.builtin.systemd_service:
+#     name: clickhouse-keeper
+#     state: started
+#     enabled: true
+
+- name: Install Python driver
+  ansible.builtin.pip:
+    name: valkey
+    state: present
