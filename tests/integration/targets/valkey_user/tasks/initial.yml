@@ -1,23 +1,57 @@
 - name: Create list of test cases for valkey_user module
   ansible.builtin.set_fact:
     test_cases:
-      - name: test_user
+      - name: test_user_1
         enabled: true
-        # passwords: []
+        passwords: ['test_pass']
         # hashed_passwords: []
         # commands: []
-        # keys: []
+        # key_patterns: []
         # channels: []
-        # selectors: []
         # categories: []
-        # append_passwords: 
-        # append_keys:
-        # append_channels:
-        __expected_query: "Creating user 'test_user' with params username=test_user enabled=True passwords=[] hashed_passwords=[] reset_passwords=False reset_keys=False reset_channels=False"
-        __expected_alter: "Updating user 'test_user' with params username=test_user enabled=True passwords=[] hashed_passwords=[]"
-        __expected_drop: "Deleting user 'test_user'"
+        # reset_passwords: 
+        # reset_key_patterns:
+        # reset_channels:
+        __expected_query: "Creating user 'test_user_1' with params username=test_user_1 enabled=True passwords=['+********'] hashed_passwords=[] reset_passwords=False reset_key_patterns=False reset_channels=False categories=['-@all']"
+        __expected_alter: "Updating user 'test_user_1' with params username=test_user_1 enabled=True passwords=['+********'] hashed_passwords=[] reset_passwords=False reset_key_patterns=False reset_channels=False categories=['-@all']"
+        __expected_drop: "Deleting user 'test_user_1'."
+      - name: test_user_2
+        enabled: true
+        passwords: ['test_pass']
+        # hashed_passwords: []
+        # commands: []
+        # key_patterns: []
+        # channels: []
+        # categories: []
+        # reset_passwords: 
+        # reset_key_patterns:
+        # reset_channels:
+        __expected_query: "Creating user 'test_user_2' with params username=test_user_2 enabled=True passwords=['+********'] hashed_passwords=[] reset_passwords=False reset_key_patterns=False reset_channels=False categories=['-@all']"
+        __expected_alter: "Updating user 'test_user_2' with params username=test_user_2 enabled=True passwords=['+********'] hashed_passwords=[] reset_passwords=False reset_key_patterns=False reset_channels=False categories=['-@all']"
+        __expected_drop: "Deleting user 'test_user_2'."
+      - name: test_user_3
+        enabled: true
+        passwords: ['test_pass2', 'test_pass2']
+        __expected_query: "Creating user 'test_user_3' with params username=test_user_3 enabled=True passwords=['+********', '+********'] hashed_passwords=[] reset_passwords=False reset_key_patterns=False reset_channels=False categories=['-@all']"
+        __expected_alter: "Updating user 'test_user_3' with params username=test_user_3 enabled=True passwords=['+********', '+********'] hashed_passwords=[] reset_passwords=False reset_key_patterns=False reset_channels=False categories=['-@all']"
+        __expected_drop: "Deleting user 'test_user_3'."
+      - name: test_user_4
+        enabled: true
+        # passwords: []
+        hashed_passwords: ['10a6e6cc8311a3e2bcc09bf6c199adecd5dd59408c343e926b129c4914f3cb01']
+        # commands: []
+        # key_patterns: []
+        # channels: []
+        # categories: []
+        # reset_passwords: 
+        # reset_key_patterns:
+        # reset_channels:
+        __user: test_user_4
+        __expected_query: "Creating user 'test_user_4' with params username=test_user_4 enabled=True passwords=[] hashed_passwords=['+********'] reset_passwords=False reset_key_patterns=False reset_channels=False categories=['-@all']"
+        __expected_alter: "Updating user 'test_user_4' with params username=test_user_4 enabled=True passwords=[] hashed_passwords=['+********'] reset_passwords=False reset_key_patterns=False reset_channels=False categories=['-@all']"
+        __expected_drop: "Deleting user 'test_user_4'."
 
-- name: Create test user in check mode
+- name: Create plain test user in check mode
   rkozlo.valkey.valkey_user:
     name: test_user
   check_mode: true
@@ -27,7 +61,7 @@
   ansible.builtin.assert:
     that:
       - result.changed == True
-      - result.executed_statements == ["Creating user 'test_user' with params username=test_user enabled=True passwords=[] hashed_passwords=[] reset_passwords=False reset_keys=False reset_channels=False categories=['-@all']"]
+      - result.executed_statements == ["Creating user 'test_user' with params username=test_user enabled=True passwords=[] hashed_passwords=[] reset_passwords=False reset_key_patterns=False reset_channels=False categories=['-@all']"]
 
 - name: Check user is not created
   rkozlo.valkey.valkey_exec:
@@ -41,7 +75,7 @@
     that:
       result.result == []
 
-- name: Create test user in real mode
+- name: Create plain test user in real mode
   rkozlo.valkey.valkey_user:
     name: test_user
   register: result
@@ -50,7 +84,7 @@
   ansible.builtin.assert:
     that:
       - result.changed == True
-      - result.executed_statements == ["Creating user 'test_user' with params username=test_user enabled=True passwords=[] hashed_passwords=[] reset_passwords=False reset_keys=False reset_channels=False categories=['-@all']"]
+      - result.executed_statements == ["Creating user 'test_user' with params username=test_user enabled=True passwords=[] hashed_passwords=[] reset_passwords=False reset_key_patterns=False reset_channels=False categories=['-@all']"]
 
 - name: Check user is created
   rkozlo.valkey.valkey_exec:
@@ -64,7 +98,7 @@
     that:
       - result.result | length > 0
 
-- name: Create test user in real mode - idempotency
+- name: Create plain test user in real mode - idempotency
   rkozlo.valkey.valkey_user:
     name: test_user
   register: result
@@ -75,39 +109,18 @@
       - result.changed == False
       - result.executed_statements == []
 
-# TO CLEAN
-# - name: Drop user in real mode
-#   rkozlo.valkey.valkey_user:
-#     name: test_user
-#     state: absent
-#   register: result
-#   check_mode: true
-# - name: Drop user in real mode
-#   rkozlo.valkey.valkey_user:
-#     name: test_user
-#     state: absent
-#   register: result
-
-- name: Alter test user in real_mode
-  rkozlo.valkey.valkey_user:
-    name: test_user
-    # passwords: ['test_password']
-  register: result
-
-##
-
 - name: Alter test user in check_mode
   rkozlo.valkey.valkey_user:
     name: test_user
     passwords: ['test_password']
   register: result
-  # check_mode: true
+  check_mode: true
 
 - name: Check result
   ansible.builtin.assert:
     that:
       - result.changed == True
-      - result.executed_statements == ["Updating user 'test_user' with params username=test_user enabled=True passwords=['+********'] hashed_passwords=[] reset_passwords=False reset_keys=False reset_channels=False categories=['-@all']"]
+      - result.executed_statements == ["Updating user 'test_user' with params username=test_user enabled=True passwords=['+********'] hashed_passwords=[] reset_passwords=False reset_key_patterns=False reset_channels=False categories=['-@all']"]
 
 - name: Check user is not altered
   rkozlo.valkey.valkey_exec:
@@ -131,7 +144,7 @@
   ansible.builtin.assert:
     that:
       - result.changed == True
-      - result.executed_statements == ["Updating user 'test_user' with params username=test_user enabled=True passwords=['+********'] hashed_passwords=[] reset_passwords=False reset_keys=False reset_channels=False categories=['-@all']"]
+      - result.executed_statements == ["Updating user 'test_user' with params username=test_user enabled=True passwords=['+********'] hashed_passwords=[] reset_passwords=False reset_key_patterns=False reset_channels=False categories=['-@all']"]
 
 - name: Check user is altered
   rkozlo.valkey.valkey_exec:
@@ -156,6 +169,66 @@
     that:
       - result.changed == False
       - result.executed_statements == []
+
+- name: Alter test user add password no reset
+  rkozlo.valkey.valkey_user:
+    name: test_user
+    passwords: ['test_password2']
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed == True
+      - result.executed_statements == ["Updating user 'test_user' with params username=test_user enabled=True passwords=['+********'] hashed_passwords=[] reset_passwords=False reset_key_patterns=False reset_channels=False categories=['-@all']"]
+
+- name: Alter test user no password no reset 
+  rkozlo.valkey.valkey_user:
+    name: test_user
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed == False
+      - result.executed_statements == []
+
+- name: Check user is altered
+  rkozlo.valkey.valkey_exec:
+    command: ACL_GETUSER
+    params:
+      username: test_user
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.result.passwords | length == 2
+
+- name: Alter test user one password reset
+  rkozlo.valkey.valkey_user:
+    name: test_user
+    passwords: ['test_password']
+    reset_passwords: true
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed == True
+      - result.executed_statements == ["Updating user 'test_user' with params username=test_user enabled=True passwords=['+********'] hashed_passwords=[] reset_passwords=True reset_key_patterns=False reset_channels=False categories=['-@all']"]
+
+- name: Check user is altered
+  rkozlo.valkey.valkey_exec:
+    command: ACL_GETUSER
+    params:
+      username: test_user
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.result.passwords | length == 1
 
 - name: Drop user in check_mode
   rkozlo.valkey.valkey_user:

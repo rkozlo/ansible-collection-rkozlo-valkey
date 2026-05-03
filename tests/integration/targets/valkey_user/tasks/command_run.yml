@@ -6,13 +6,12 @@
     passwords: "{{ _test_case.passwords | default(omit) }}"
     hashed_passwords: "{{ _test_case.hashed_passwords | default(omit) }}"
     commands: "{{ _test_case.commands | default(omit) }}"
-    keys: "{{ _test_case.keys | default(omit) }}"
+    key_patterns: "{{ _test_case.key_patterns | default(omit) }}"
     channels: "{{ _test_case.channels | default(omit) }}"
-    selectors: "{{ _test_case.selectors | default(omit) }}"
     categories: "{{ _test_case.categories | default(omit) }}"
-    append_passwords: "{{ _test_case.append_passwords | default(omit) }}"
-    append_keys: "{{ _test_case.append_keys | default(omit) }}"
-    append_channels: "{{ _test_case.append_channels | default(omit) }}"
+    reset_passwords: "{{ _test_case.append_passwords | default(omit) }}"
+    reset_key_patterns: "{{ _test_case.reset_key_patterns | default(omit) }}"
+    reset_channels: "{{ _test_case.append_channels | default(omit) }}"
   register: result
 
 - name: Check the return values {{ _test_case.name }}
@@ -28,13 +27,12 @@
     passwords: "{{ _test_case.passwords | default(omit) }}"
     hashed_passwords: "{{ _test_case.hashed_passwords | default(omit) }}"
     commands: "{{ _test_case.commands | default(omit) }}"
-    keys: "{{ _test_case.keys | default(omit) }}"
+    key_patterns: "{{ _test_case.key_patterns | default(omit) }}"
     channels: "{{ _test_case.channels | default(omit) }}"
-    selectors: "{{ _test_case.selectors | default(omit) }}"
     categories: "{{ _test_case.categories | default(omit) }}"
-    append_passwords: "{{ _test_case.append_passwords | default(omit) }}"
-    append_keys: "{{ _test_case.append_keys | default(omit) }}"
-    append_channels: "{{ _test_case.append_channels | default(omit) }}"
+    reset_passwords: "{{ _test_case.reset_passwords | default(omit) }}"
+    reset_key_patterns: "{{ _test_case.reset_key_patterns | default(omit) }}"
+    reset_channels: "{{ _test_case.reset_channels | default(omit) }}"
   register: result
 
 - name: Check the return values {{ _test_case.name }}
@@ -42,13 +40,6 @@
     that:
       - result.changed == false
       - result.executed_statements == []
-
-- name: Check user is dropped
-  rkozlo.valkey.valkey_exec:
-    command: "{{  _test_case.name }}"
-    params:
-      username: test_user
-  register: result
 
 - name: Drop user {{ _test_case.name }}
   rkozlo.valkey.valkey_user:

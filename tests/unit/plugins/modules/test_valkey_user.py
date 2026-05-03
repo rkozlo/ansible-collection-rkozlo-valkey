@@ -153,7 +153,7 @@ def test_passwords_needs_update(valkey_user, mocker, compare_result, reset_passw
     assert result is expected
 
 
-@pytest.mark.parametrize("reset_keys, keys, current, expected", [
+@pytest.mark.parametrize("reset_key_patterns, key_patterns, current, expected", [
     (False, [], [], False), # Equal empty,
     (True, [], [], False), # Equal empty reset
     (False, ['~*'], [], True), # Not equal
@@ -165,9 +165,9 @@ def test_passwords_needs_update(valkey_user, mocker, compare_result, reset_passw
     (False, ['cache*'], ['~*', 'cache*'], False), # Subset part of 
     (True, ['cache*'], ['~*', 'cache*'], True), # Subset port of reset
 ])
-def test_keys_needs_update(valkey_user, keys, current, reset_keys, expected,):
-    valkey_user._keys = current
-    result = valkey_user._keys_needs_update(keys, reset_keys)
+def test_key_patterns_needs_update(valkey_user, key_patterns, current, reset_key_patterns, expected,):
+    valkey_user._key_patterns = current
+    result = valkey_user._key_patterns_needs_update(key_patterns, reset_key_patterns)
 
     assert result is expected
 
@@ -203,16 +203,15 @@ def test_channels_needs_update(valkey_user, reset_channels, channels, current, e
 def test_needs_update_enabled_change_from_false_to_true(valkey_user, mocker):
     """Test update needed when enabled status changes from False to True"""
     mocker.patch.object(valkey_user, '_passwords_needs_update', return_value=False)
-    mocker.patch.object(valkey_user, '_keys_needs_update', return_value=False)
+    mocker.patch.object(valkey_user, '_key_patterns_needs_update', return_value=False)
     mocker.patch.object(valkey_user, '_channels_needs_update', return_value=False)
     valkey_user._enabled = False
     valkey_user._commands = []
-    valkey_user._selectors = []
     valkey_user._categories = []
 
     result = valkey_user._needs_update(
-        enabled=True, commands=[], selectors=[], categories=[],
-        keys=[], channels=[], passwords=[], hashed_passwords=[]
+        enabled=True, commands=[], categories=[],
+        key_patterns=[], channels=[], passwords=[], hashed_passwords=[]
     )
 
     assert result is True
@@ -221,16 +220,15 @@ def test_needs_update_enabled_change_from_false_to_true(valkey_user, mocker):
 def test_needs_update_enabled_change_from_true_to_false(valkey_user, mocker):
     """Test update needed when enabled status changes from True to False"""
     mocker.patch.object(valkey_user, '_passwords_needs_update', return_value=False)
-    mocker.patch.object(valkey_user, '_keys_needs_update', return_value=False)
+    mocker.patch.object(valkey_user, '_key_patterns_needs_update', return_value=False)
     mocker.patch.object(valkey_user, '_channels_needs_update', return_value=False)
     valkey_user._enabled = True
     valkey_user._commands = []
-    valkey_user._selectors = []
     valkey_user._categories = []
 
     result = valkey_user._needs_update(
-        enabled=False, commands=[], selectors=[], categories=[],
-        keys=[], channels=[], passwords=[], hashed_passwords=[]
+        enabled=False, commands=[], categories=[],
+        key_patterns=[], channels=[], passwords=[], hashed_passwords=[]
     )
 
     assert result is True
@@ -238,16 +236,15 @@ def test_needs_update_enabled_change_from_true_to_false(valkey_user, mocker):
 def test_needs_update_plain_no_change_needed(valkey_user, mocker):
     """Test no update when everything matches"""
     mocker.patch.object(valkey_user, '_passwords_needs_update', return_value=False)
-    mocker.patch.object(valkey_user, '_keys_needs_update', return_value=False)
+    mocker.patch.object(valkey_user, '_key_patterns_needs_update', return_value=False)
     mocker.patch.object(valkey_user, '_channels_needs_update', return_value=False)
     valkey_user._enabled = True
     valkey_user._commands = []
-    valkey_user._selectors = []
     valkey_user._categories = []
 
     result = valkey_user._needs_update(
-        enabled=True, commands=[], selectors=[], categories=[],
-        keys=[], channels=[], passwords=[], hashed_passwords=[]
+        enabled=True, commands=[], categories=[],
+        key_patterns=[], channels=[], passwords=[], hashed_passwords=[]
     )
 
     assert result is False
@@ -255,17 +252,16 @@ def test_needs_update_plain_no_change_needed(valkey_user, mocker):
 def test_needs_update_no_change_needed(valkey_user, mocker):
     """Test no update when everything matches"""
     mocker.patch.object(valkey_user, '_passwords_needs_update', return_value=False)
-    mocker.patch.object(valkey_user, '_keys_needs_update', return_value=False)
+    mocker.patch.object(valkey_user, '_key_patterns_needs_update', return_value=False)
     mocker.patch.object(valkey_user, '_channels_needs_update', return_value=False)
     mocker.patch.object(valkey_user, '_categories_needs_update', return_value=False)
     valkey_user._enabled = True
     valkey_user._commands = ['get', 'set']
-    valkey_user._selectors = []
     valkey_user._categories = ['@admin']
 
     result = valkey_user._needs_update(
-        enabled=True, commands=['get', 'set'], selectors=[], categories=['@admin'],
-        keys=[], channels=[], passwords=[], hashed_passwords=[]
+        enabled=True, commands=['get', 'set'], categories=['@admin'],
+        key_patterns=[], channels=[], passwords=[], hashed_passwords=[]
     )
 
     assert result is False
@@ -274,34 +270,32 @@ def test_needs_update_no_change_needed(valkey_user, mocker):
 def test_needs_update_passwords_need_update(valkey_user, mocker):
     """Test update needed when passwords need changing"""
     mocker.patch.object(valkey_user, '_passwords_needs_update', return_value=True)
-    mocker.patch.object(valkey_user, '_keys_needs_update', return_value=False)
+    mocker.patch.object(valkey_user, '_key_patterns_needs_update', return_value=False)
     mocker.patch.object(valkey_user, '_channels_needs_update', return_value=False)
     valkey_user._enabled = True
     valkey_user._commands = []
-    valkey_user._selectors = []
     valkey_user._categories = []
 
     result = valkey_user._needs_update(
-        enabled=True, commands=[], selectors=[], categories=[],
-        keys=[], channels=[], passwords=['newpass'], hashed_passwords=[]
+        enabled=True, commands=[], categories=[],
+        key_patterns=[], channels=[], passwords=['newpass'], hashed_passwords=[]
     )
 
     assert result is True
 
 
-def test_needs_update_keys_need_update(valkey_user, mocker):
+def test_needs_update_key_patterns_need_update(valkey_user, mocker):
     """Test update needed when key patterns need changing"""
     mocker.patch.object(valkey_user, '_passwords_needs_update', return_value=False)
-    mocker.patch.object(valkey_user, '_keys_needs_update', return_value=True)
+    mocker.patch.object(valkey_user, '_key_patterns_needs_update', return_value=True)
     mocker.patch.object(valkey_user, '_channels_needs_update', return_value=False)
     valkey_user._enabled = True
     valkey_user._commands = []
-    valkey_user._selectors = []
     valkey_user._categories = []
 
     result = valkey_user._needs_update(
-        enabled=True, commands=[], selectors=[], categories=[],
-        keys=['cache:*', 'user:*'], channels=[], passwords=[], hashed_passwords=[]
+        enabled=True, commands=[], categories=[],
+        key_patterns=['cache:*', 'user:*'], channels=[], passwords=[], hashed_passwords=[]
     )
 
     assert result is True
@@ -310,16 +304,15 @@ def test_needs_update_keys_need_update(valkey_user, mocker):
 def test_needs_update_channels_need_update(valkey_user, mocker):
     """Test update needed when channel patterns need changing"""
     mocker.patch.object(valkey_user, '_passwords_needs_update', return_value=False)
-    mocker.patch.object(valkey_user, '_keys_needs_update', return_value=False)
+    mocker.patch.object(valkey_user, '_key_patterns_needs_update', return_value=False)
     mocker.patch.object(valkey_user, '_channels_needs_update', return_value=True)
     valkey_user._enabled = True
     valkey_user._commands = []
-    valkey_user._selectors = []
     valkey_user._categories = []
 
     result = valkey_user._needs_update(
-        enabled=True, commands=[], selectors=[], categories=[],
-        keys=[], channels=['chat:*', 'alerts'], passwords=[], hashed_passwords=[]
+        enabled=True, commands=[], categories=[],
+        key_patterns=[], channels=['chat:*', 'alerts'], passwords=[], hashed_passwords=[]
     )
 
     assert result is True
@@ -328,16 +321,15 @@ def test_needs_update_channels_need_update(valkey_user, mocker):
 def test_needs_update_commands_different(valkey_user, mocker):
     """Test update needed when command list differs"""
     mocker.patch.object(valkey_user, '_passwords_needs_update', return_value=False)
-    mocker.patch.object(valkey_user, '_keys_needs_update', return_value=False)
+    mocker.patch.object(valkey_user, '_key_patterns_needs_update', return_value=False)
     mocker.patch.object(valkey_user, '_channels_needs_update', return_value=False)
     valkey_user._enabled = True
     valkey_user._commands = ['get']
-    valkey_user._selectors = []
     valkey_user._categories = []
 
     result = valkey_user._needs_update(
-        enabled=True, commands=['get', 'set'], selectors=[], categories=[],
-        keys=[], channels=[], passwords=[], hashed_passwords=[]
+        enabled=True, commands=['get', 'set'], categories=[],
+        key_patterns=[], channels=[], passwords=[], hashed_passwords=[]
     )
 
     assert result is True
@@ -346,52 +338,32 @@ def test_needs_update_commands_different(valkey_user, mocker):
 def test_needs_update_commands_same_different_order(valkey_user, mocker):
     """Test no update when commands are same regardless of order"""
     mocker.patch.object(valkey_user, '_passwords_needs_update', return_value=False)
-    mocker.patch.object(valkey_user, '_keys_needs_update', return_value=False)
+    mocker.patch.object(valkey_user, '_key_patterns_needs_update', return_value=False)
     mocker.patch.object(valkey_user, '_channels_needs_update', return_value=False)
     valkey_user._enabled = True
     valkey_user._commands = ['set', 'get']
-    valkey_user._selectors = []
     valkey_user._categories = []
 
     result = valkey_user._needs_update(
-        enabled=True, commands=['get', 'set'], selectors=[], categories=[],
-        keys=[], channels=[], passwords=[], hashed_passwords=[]
+        enabled=True, commands=['get', 'set'], categories=[],
+        key_patterns=[], channels=[], passwords=[], hashed_passwords=[]
     )
 
     assert result is False
 
 
-def test_needs_update_selectors_different(valkey_user, mocker):
-    """Test update needed when selectors differ"""
-    mocker.patch.object(valkey_user, '_passwords_needs_update', return_value=False)
-    mocker.patch.object(valkey_user, '_keys_needs_update', return_value=False)
-    mocker.patch.object(valkey_user, '_channels_needs_update', return_value=False)
-    valkey_user._enabled = True
-    valkey_user._commands = []
-    valkey_user._selectors = [('+get', '~cache:*')]
-    valkey_user._categories = []
-
-    result = valkey_user._needs_update(
-        enabled=True, commands=[], selectors=[('+set', '~user:*')], categories=[],
-        keys=[], channels=[], passwords=[], hashed_passwords=[]
-    )
-
-    assert result is True
-
-
 def test_needs_update_categories_different(valkey_user, mocker):
     """Test update needed when categories differ"""
     mocker.patch.object(valkey_user, '_passwords_needs_update', return_value=False)
-    mocker.patch.object(valkey_user, '_keys_needs_update', return_value=False)
+    mocker.patch.object(valkey_user, '_key_patterns_needs_update', return_value=False)
     mocker.patch.object(valkey_user, '_channels_needs_update', return_value=False)
     valkey_user._enabled = True
     valkey_user._commands = []
-    valkey_user._selectors = []
     valkey_user._categories = ['@read']
 
     result = valkey_user._needs_update(
-        enabled=True, commands=[], selectors=[], categories=['@admin'],
-        keys=[], channels=[], passwords=[], hashed_passwords=[]
+        enabled=True, commands=[], categories=['@admin'],
+        key_patterns=[], channels=[], passwords=[], hashed_passwords=[]
     )
 
     assert result is True

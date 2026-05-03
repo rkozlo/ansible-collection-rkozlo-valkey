@@ -23,7 +23,7 @@ extends_documentation_fragment:
 description:
   - This module manages users on a Valkey server, allowing you to create, update, or delete users with specific permissions and configurations.
   - The module supports various parameters to define user properties such as passwords, commands, keys,
-    channels, selectors, and categories.
+    channels and categories.
   - It also supports appending new passwords, keys, or channels to existing ones without overwriting them.
 
 options:
@@ -61,9 +61,9 @@ options:
     type: list
     elements: str
     required: false
-  keys:
+  key_patterns:
     description:
-      - List of keys for the user.
+      - List of key patters for the user.
     type: list
     elements: str
     required: false
@@ -73,15 +73,9 @@ options:
     type: list
     elements: str
     required: false
-  selectors:
-    description:
-      - List of selectors for the user.
-    type: list
-    elements: str
-    required: false
   categories:
     description:
-      - List of categories for the user.
+      - List of categories for the user. Currently it only works in append mode.
     type: list
     elements: str
     required: false
@@ -90,7 +84,7 @@ options:
       - Whetere overwrite or append passwords.
     type: bool
     default: false
-  reset_keys:
+  reset_key_patterns:
     description:
       - Whetere overwrite or append keys.
     type: bool
@@ -127,9 +121,8 @@ class ValkeyUser:
         self._exists = None
         self._passwords = None
         self._commands = None
-        self._keys = None
+        self._key_patterns = None
         self._channels = None
-        self._selectors = None
         self._categories = None
         self._enabled = None
 
@@ -152,22 +145,16 @@ class ValkeyUser:
         return self._commands
 
     @property
-    def keys(self):
-        if self._keys is None:
+    def key_patterns(self):
+        if self._key_patterns is None:
             self._load()
-        return self._keys
+        return self._key_patterns
 
     @property
     def channels(self):
         if self._channels is None:
             self._load()
         return self._channels
-
-    @property
-    def selectors(self):
-        if self._selectors is None:
-            self._load()
-        return self._selectors
 
     @property
     def categories(self):
@@ -193,9 +180,8 @@ class ValkeyUser:
         self._exists = True
         self._passwords = result.get('passwords', [])
         self._commands = result.get('commands', [])
-        self._keys = result.get('keys', [])
+        self._key_patterns = result.get('keys', [])
         self._channels = result.get('channels', [])
-        self._selectors = result.get('selectors', [])
         self._categories = result.get('categories', [])
         self._enabled = result.get('enabled')
 
@@ -218,26 +204,24 @@ class ValkeyUser:
                     result.append(hashlib.sha256(password.encode('utf-8')).hexdigest())
         return result
 
-    def _build_acl_params(self, username, enabled, passwords, hashed_passwords,
-                          commands, keys, channels, selectors, categories,
-                          reset_passwords=False, reset_keys=False, reset_channels=False):
+    def _build_acl_params(self, enabled, passwords, hashed_passwords,
+                          commands, key_patterns, channels, categories,
+                          reset_passwords=False, reset_key_patterns=False, reset_channels=False):
         params = {
-            'username': username,
+            'username': self.name,
             'enabled': enabled,
             'passwords': passwords,
             'hashed_passwords': hashed_passwords,
-            'reset_passwords': False,
-            'reset_keys': False,
-            'reset_channels': False
+            'reset_passwords': reset_passwords,
+            'reset_key_patterns': reset_key_patterns,
+            'reset_channels': reset_channels
         }
         if commands is not None:
             params['commands'] = commands
-        if keys is not None:
-            params['keys'] = keys
+        if key_patterns is not None:
+            params['key_patterns'] = key_patterns
         if channels is not None:
             params['channels'] = channels
-        if selectors is not None:
-            params['selectors'] = selectors
         if categories is not None:
             params['categories'] = categories
         return params
@@ -254,12 +238,12 @@ class ValkeyUser:
                 return False
         return True
 
-    def _keys_needs_update(self, keys, reset_keys):
-        desired_keys = keys or []
-        if set(desired_keys) == set(self.keys):
+    def _key_patterns_needs_update(self, key_patterns, reset_key_patterns):
+        desired_patterns = key_patterns or []
+        if set(desired_patterns) == set(self.key_patterns):
             return False
-        if not reset_keys:
-            if set(desired_keys).issubset(set(self.keys)):
+        if not reset_key_patterns:
+            if set(desired_patterns).issubset(set(self.key_patterns)):
                 return False
         return True
 
@@ -272,13 +256,15 @@ class ValkeyUser:
                 return False
         return True
 
-    def _categories_needs_update(self, commands=[]):
-        '''Commands currently only works in append mode.'''
-        '''Idempotency we mean passed commands are part of current command.'''
+    def _categories_needs_update(self, categories=[], reset_categories=True):
+        '''Categories in server only works in append mode. Here workaround for reset if passed.'''
+        '''Idempotency we mean passed categories are part of current categories.'''
         '''Also by default -@all is applied to empty new users.'''
 
-        desired_commands = commands or []
-        if set(desired_commands).issubset(set(self.commands)):
+        desired_categories = categories or []
+        if (set(desired_categories) != set(self.categories)) and reset_categories:
+            return True
+        if set(desired_categories).issubset(set(self.categories)):
             return False
         return True
     
@@ -287,30 +273,29 @@ class ValkeyUser:
             categories.insert(0, '-@all')
         return categories
 
-    def _needs_update(self, enabled, passwords, hashed_passwords, commands, keys, channels,
-                      selectors, categories, reset_passwords=False, reset_keys=False, reset_channels=False):
+    def _needs_update(self, enabled, passwords, hashed_passwords, commands, key_patterns, channels,
+                      categories, reset_passwords=False, reset_key_patterns=False, reset_channels=False,
+                      reset_categories=True):
         if self.enabled != enabled:
             return True
         if self._passwords_needs_update(passwords, hashed_passwords, reset_passwords):
             return True
-        if set(self.commands) != set(commands):
+        desired_commands = commands or []
+        if set(self.commands) != set(desired_commands):
             return True
-        if self._keys_needs_update(keys, reset_keys):
+        if self._key_patterns_needs_update(key_patterns, reset_key_patterns):
             return True
         if self._channels_needs_update(channels, reset_channels):
             return True
-        desired_selectors = selectors or []
-        if set(self.selectors) != set(desired_selectors):
-            return True
-        if self._categories_needs_update(categories):
+        if self._categories_needs_update(categories, reset_categories):
             return True
         return False
 
     def create(self, enabled=True, passwords=None, hashed_passwords=None, commands=None,
-               keys=None, channels=None, selectors=None, categories=[]):
+               key_patterns=None, channels=None, categories=[]):
         target_passwords, target_hashes = self._extract_passwords(passwords, hashed_passwords)
         categories = self._normalize_categories(categories)
-        params = self._build_acl_params(self.name, enabled, target_passwords, target_hashes, commands, keys,channels, selectors, categories)
+        params = self._build_acl_params(enabled, target_passwords, target_hashes, commands, key_patterns,channels, categories)
         executed_statements.append(f"Creating user '{self.name}' with params {format_params_to_string(params)}")
         if not self.module.check_mode:
             self.client._execute('acl_setuser', **params)
@@ -318,18 +303,19 @@ class ValkeyUser:
         return True
 
     def update(self, enabled=None, passwords=None, hashed_passwords=None, commands=None,
-               keys=None, channels=None, selectors=None, categories=[], reset_passwords=False,
-               reset_keys=False, reset_channels=False):
+               key_patterns=None, channels=None, categories=[], reset_passwords=False,
+               reset_key_patterns=False, reset_channels=False, reset_categories=True):
         categories = self._normalize_categories(categories)
         if not self._needs_update(enabled, passwords, hashed_passwords, commands,
-                              keys, channels, selectors, categories, reset_passwords,
-                              reset_keys, reset_channels):
+                              key_patterns, channels, categories, reset_passwords,
+                              reset_key_patterns, reset_channels, reset_categories):
             return False
 
         target_passwords, target_hashes = self._extract_passwords(passwords, hashed_passwords)
 
-        params = self._build_acl_params(self.name, enabled, target_passwords, target_hashes,commands, keys,
-                                        channels, selectors, categories, reset_channels, reset_keys, reset_channels)
+        params = self._build_acl_params(enabled, target_passwords, target_hashes,commands, key_patterns,
+                                        channels, categories, reset_passwords, reset_key_patterns, reset_channels)
+
 
         executed_statements.append(f"Updating user '{self.name}' with params {format_params_to_string(params)}")
         if not self.module.check_mode:
@@ -354,13 +340,13 @@ def main():
         passwords=dict(type='list', elements='str', required=False, default=None, no_log=True),
         hashed_passwords=dict(type='list', elements='str', required=False, default=None, no_log=True),
         commands=dict(type='list', elements='str', required=False, default=None),
-        keys=dict(type='list', elements='str', required=False, default=None, no_log=False),
+        key_patterns=dict(type='list', elements='str', required=False, default=None, no_log=False),
         channels=dict(type='list', elements='str', required=False, default=None),
-        selectors=dict(type='list', elements='str', required=False, default=None),
         categories=dict(type='list', elements='str', default=['-@all']),
         reset_passwords=dict(type='bool', default=False),
-        reset_keys=dict(type='bool', default=False),
+        reset_key_patterns=dict(type='bool', default=False),
         reset_channels=dict(type='bool', default=False),
+        reset_categories=dict(type='bool', default=True)
     )
     module = AnsibleModule(
         argument_spec=argument_spec,
@@ -376,26 +362,26 @@ def main():
     enabled = module.params['enabled']
     state = module.params['state']
     passwords = module.params['passwords']
+    hashed_passwords = module.params['hashed_passwords']
     commands = module.params['commands']
-    keys = module.params['keys']
+    key_patterns = module.params['key_patterns']
     channels = module.params['channels']
-    selectors = module.params['selectors']
     categories = module.params['categories']
     reset_passwords = module.params['reset_passwords']
-    reset_keys = module.params['reset_keys']
+    reset_key_patterns = module.params['reset_key_patterns']
     reset_channels = module.params['reset_channels']
+    reset_categories = module.params['reset_categories']
 
     valkey_user = ValkeyUser(module, client, name=name)
     changed = False
     if state == 'present':
         if not valkey_user.exists:
-            changed = valkey_user.create(enabled=enabled, passwords=passwords, commands=commands, keys=keys,
-                                         channels=channels, selectors=selectors, categories=categories)
+            changed = valkey_user.create(enabled=enabled, passwords=passwords, hashed_passwords=hashed_passwords, commands=commands,
+                                         key_patterns=key_patterns, channels=channels, categories=categories)
         else:
-            changed = valkey_user.update(enabled=enabled, passwords=passwords, commands=commands, keys=keys,
-                                         channels=channels, selectors=selectors, categories=categories,
-                                         reset_channels=reset_channels, reset_passwords=reset_passwords,
-                                         reset_keys=reset_keys)
+            changed = valkey_user.update(enabled=enabled, passwords=passwords, hashed_passwords=hashed_passwords,  commands=commands,
+                                         key_patterns=key_patterns, channels=channels, categories=categories, reset_channels=reset_channels,
+                                         reset_passwords=reset_passwords, reset_key_patterns=reset_key_patterns, reset_categories=reset_categories)
     else:
         if valkey_user.exists:
             changed = valkey_user.delete()
