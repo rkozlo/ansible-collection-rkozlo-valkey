@@ -69,7 +69,7 @@
 
 ### Test passwords
 - name: Test password differs
-  when: _test_case.hashed_passwords is defined
+  when: _test_case.passwords is defined
   block:
     - name: Create user passwords differs {{ _test_case.name }}
       rkozlo.valkey.valkey_user:
@@ -179,6 +179,7 @@
       register: result
 
     - name: Include tasks for command run {{ _test_case.name }}
+      include_tasks: command_run.yml
 
 ### Test categories differs.
 - name: Test categories differs

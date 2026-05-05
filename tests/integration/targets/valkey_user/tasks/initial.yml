@@ -46,10 +46,66 @@
         # reset_passwords: 
         # reset_key_patterns:
         # reset_channels:
-        __user: test_user_4
         __expected_query: "Creating user 'test_user_4' with params username=test_user_4 enabled=True passwords=[] hashed_passwords=['+********'] reset_passwords=False reset_key_patterns=False reset_channels=False categories=['-@all']"
         __expected_alter: "Updating user 'test_user_4' with params username=test_user_4 enabled=True passwords=[] hashed_passwords=['+********'] reset_passwords=False reset_key_patterns=False reset_channels=False categories=['-@all']"
         __expected_drop: "Deleting user 'test_user_4'."
+      - name: test_user_5
+        enabled: true
+        passwords: ['ansi']
+        hashed_passwords: ['10a6e6cc8311a3e2bcc09bf6c199adecd5dd59408c343e926b129c4914f3cb01']
+        # commands: []
+        # key_patterns: []
+        # channels: []
+        # categories: []
+        # reset_passwords: 
+        # reset_key_patterns:
+        # reset_channels:
+        __expected_query: "Creating user 'test_user_5' with params username=test_user_5 enabled=True passwords=['+********'] hashed_passwords=['+********'] reset_passwords=False reset_key_patterns=False reset_channels=False categories=['-@all']"
+        __expected_alter: "Updating user 'test_user_5' with params username=test_user_5 enabled=True passwords=['+********'] hashed_passwords=['+********'] reset_passwords=False reset_key_patterns=False reset_channels=False categories=['-@all']"
+        __expected_drop: "Deleting user 'test_user_5'."
+      - name: test_user_6
+        enabled: true
+        passwords: ['ansi']
+        hashed_passwords: ['10a6e6cc8311a3e2bcc09bf6c199adecd5dd59408c343e926b129c4914f3cb01']
+        # commands: []
+        # key_patterns: []
+        # channels: []
+        # categories: []
+        reset_passwords: true
+        # reset_key_patterns:
+        # reset_channels:
+        __expected_query: "Creating user 'test_user_6' with params username=test_user_6 enabled=True passwords=['+********'] hashed_passwords=['+********'] reset_passwords=False reset_key_patterns=False reset_channels=False categories=['-@all']"
+        __expected_alter: "Updating user 'test_user_6' with params username=test_user_6 enabled=True passwords=['+********'] hashed_passwords=['+********'] reset_passwords=True reset_key_patterns=False reset_channels=False categories=['-@all']"
+        __expected_drop: "Deleting user 'test_user_6'."
+      - name: test_user_7
+        enabled: true
+        passwords: ['ansi']
+        hashed_passwords: ['10a6e6cc8311a3e2bcc09bf6c199adecd5dd59408c343e926b129c4914f3cb01']
+        # commands: []
+        # key_patterns: []
+        # channels: []
+        categories: ['+@all']
+        reset_passwords: false
+        # reset_key_patterns:
+        # reset_channels:
+        __expected_query: "Creating user 'test_user_7' with params username=test_user_7 enabled=True passwords=['+********'] hashed_passwords=['+********'] reset_passwords=False reset_key_patterns=False reset_channels=False categories=['+@all']"
+        __expected_alter: "Updating user 'test_user_7' with params username=test_user_7 enabled=True passwords=['+********'] hashed_passwords=['+********'] reset_passwords=False reset_key_patterns=False reset_channels=False categories=['+@all']"
+        __expected_drop: "Deleting user 'test_user_7'."
+      - name: test_user_8
+        enabled: true
+        passwords: ['ansi']
+        # hashed_passwords: ['10a6e6cc8311a3e2bcc09bf6c199adecd5dd59408c343e926b129c4914f3cb01']
+        # commands: []
+        # key_patterns: []
+        # channels: []
+        categories: ['+@all']
+        reset_passwords: false
+        # reset_key_patterns:
+        # reset_channels:
+        reset_categories: true
+        __expected_query: "Creating user 'test_user_8' with params username=test_user_8 enabled=True passwords=['+********'] hashed_passwords=[] reset_passwords=False reset_key_patterns=False reset_channels=False categories=['+@all']"
+        __expected_alter: "Updating user 'test_user_8' with params username=test_user_8 enabled=True passwords=['+********'] hashed_passwords=[] reset_passwords=False reset_key_patterns=False reset_channels=False categories=['+@all']"
+        __expected_drop: "Deleting user 'test_user_8'."
 
 - name: Create plain test user in check mode
   rkozlo.valkey.valkey_user:

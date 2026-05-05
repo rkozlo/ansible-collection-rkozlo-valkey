@@ -132,16 +132,16 @@ def test_compare_passwords(valkey_user, desired, current, expected):
 
 
 @pytest.mark.parametrize("compare_result,reset_passwords,current_set,normalized_set,expected", [
-    (True, False, [], [], False),   # Already equal
-    (True, True, [], [], False),   # Already equal reset
-    (False, False, [], ['a'], True), # Not equal
-    (False, True, [], ['a'], True), # Not equal reset
-    (False, False, ['a'], ['b'], True),  # Not equal, replace → update
-    (False, True, ['a'], ['b'], True),  # Not equal, replace reset → update
-    (False, False, ['a', 'b'], ['a'], False),  # Subset exists → no update
-    (False, True, ['a', 'b'], ['a'], True),  # Subset exists not equal reset → update
-    (False, False, ['a', 'b'], ['a', 'b'], False),  # Subset equal → no update
-    (True, True, ['a', 'b'], ['a', 'b'], False),  # Subset equal reset → no update
+    (True, False, [], [], False),                       # Already equal
+    (True, True, [], [], False),                        # Already equal reset
+    (False, False, [], ['a'], True),                    # Not equal
+    (False, True, [], ['a'], True),                     # Not equal reset
+    (False, False, ['a'], ['b'], True),                 # Not equal, replace → update
+    (False, True, ['a'], ['b'], True),                  # Not equal, replace reset → update
+    (False, False, ['a', 'b'], ['a'], False),           # Subset exists → no update
+    (False, True, ['a', 'b'], ['a'], True),             # Subset exists not equal reset → update
+    (False, False, ['a', 'b'], ['a', 'b'], False),      # Subset equal → no update
+    (True, True, ['a', 'b'], ['a', 'b'], False),        # Subset equal reset → no update
 ])
 def test_passwords_needs_update(valkey_user, mocker, compare_result, reset_passwords, current_set, normalized_set, expected):
     mocker.patch.object(valkey_user, '_normalize_passwords_and_hashes', return_value=normalized_set)
@@ -154,22 +154,23 @@ def test_passwords_needs_update(valkey_user, mocker, compare_result, reset_passw
 
 
 @pytest.mark.parametrize("reset_key_patterns, key_patterns, current, expected", [
-    (False, [], [], False), # Equal empty,
-    (True, [], [], False), # Equal empty reset
-    (False, ['~*'], [], True), # Not equal
-    (True, ['~*'], [], True), # Not equal reset
-    (False, ['~*'], ['~*'], False), # Equal
-    (True, ['~*'], ['~*'], False), # Equal reset
-    (False, ['~*', 'cache*'], ['~*'], True), # Not equal
-    (True, ['~*', 'cache*'], ['~*'], True), # Not equal reset
-    (False, ['cache*'], ['~*', 'cache*'], False), # Subset part of 
-    (True, ['cache*'], ['~*', 'cache*'], True), # Subset port of reset
+    (False, [], [], False),                         # Equal empty,
+    (True, [], [], False),                          # Equal empty reset
+    (False, ['~*'], [], True),                      # Not equal
+    (True, ['~*'], [], True),                       # Not equal reset
+    (False, ['~*'], ['~*'], False),                 # Equal
+    (True, ['~*'], ['~*'], False),                  # Equal reset
+    (False, ['~*', 'cache*'], ['~*'], True),        # Not equal
+    (True, ['~*', 'cache*'], ['~*'], True),         # Not equal reset
+    (False, ['cache*'], ['~*', 'cache*'], False),   # Subset part of
+    (True, ['cache*'], ['~*', 'cache*'], True),     # Subset port of reset
 ])
 def test_key_patterns_needs_update(valkey_user, key_patterns, current, reset_key_patterns, expected,):
     valkey_user._key_patterns = current
     result = valkey_user._key_patterns_needs_update(key_patterns, reset_key_patterns)
 
     assert result is expected
+
 
 @pytest.mark.parametrize("categories,expected", [
     ([], ['-@all']),
@@ -182,6 +183,7 @@ def test_normalize_categories(valkey_user, categories, expected):
     result = valkey_user._normalize_categories(categories)
 
     assert result == expected
+
 
 @pytest.mark.parametrize("reset_channels, channels, current, expected", [
     (False, [], [], False),
@@ -233,6 +235,7 @@ def test_needs_update_enabled_change_from_true_to_false(valkey_user, mocker):
 
     assert result is True
 
+
 def test_needs_update_plain_no_change_needed(valkey_user, mocker):
     """Test no update when everything matches"""
     mocker.patch.object(valkey_user, '_passwords_needs_update', return_value=False)
@@ -248,6 +251,7 @@ def test_needs_update_plain_no_change_needed(valkey_user, mocker):
     )
 
     assert result is False
+
 
 def test_needs_update_no_change_needed(valkey_user, mocker):
     """Test no update when everything matches"""

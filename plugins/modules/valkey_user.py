@@ -75,10 +75,17 @@ options:
     required: false
   categories:
     description:
-      - List of categories for the user. Currently it only works in append mode.
+      - List of categories for the user.
+      - Category I(-@all) will be added by default if I(+@all) not passed.
     type: list
     elements: str
-    required: false
+    default: ['-@all']
+  reset_categories:
+    description:
+      - Wheter append passed categories to present or reset to default.
+      - Used together with O(categories) will set at state.
+    type: bool
+    default: true
   reset_passwords:
     description:
       - Whetere overwrite or append passwords.
@@ -256,7 +263,7 @@ class ValkeyUser:
                 return False
         return True
 
-    def _categories_needs_update(self, categories=[], reset_categories=True):
+    def _categories_needs_update(self, categories, reset_categories=True):
         '''Categories in server only works in append mode. Here workaround for reset if passed.'''
         '''Idempotency we mean passed categories are part of current categories.'''
         '''Also by default -@all is applied to empty new users.'''
@@ -267,11 +274,12 @@ class ValkeyUser:
         if set(desired_categories).issubset(set(self.categories)):
             return False
         return True
-    
-    def _normalize_categories(self, categories=[]):
-        if not categories or all('@all' not in c for c in categories):
-            categories.insert(0, '-@all')
-        return categories
+
+    def _normalize_categories(self, categories):
+        desired_categories = categories or []
+        if not desired_categories or all('@all' not in c for c in desired_categories):
+            desired_categories.insert(0, '-@all')
+        return desired_categories
 
     def _needs_update(self, enabled, passwords, hashed_passwords, commands, key_patterns, channels,
                       categories, reset_passwords=False, reset_key_patterns=False, reset_channels=False,
@@ -292,10 +300,10 @@ class ValkeyUser:
         return False
 
     def create(self, enabled=True, passwords=None, hashed_passwords=None, commands=None,
-               key_patterns=None, channels=None, categories=[]):
+               key_patterns=None, channels=None, categories=None):
         target_passwords, target_hashes = self._extract_passwords(passwords, hashed_passwords)
         categories = self._normalize_categories(categories)
-        params = self._build_acl_params(enabled, target_passwords, target_hashes, commands, key_patterns,channels, categories)
+        params = self._build_acl_params(enabled, target_passwords, target_hashes, commands, key_patterns, channels, categories)
         executed_statements.append(f"Creating user '{self.name}' with params {format_params_to_string(params)}")
         if not self.module.check_mode:
             self.client._execute('acl_setuser', **params)
@@ -303,19 +311,17 @@ class ValkeyUser:
         return True
 
     def update(self, enabled=None, passwords=None, hashed_passwords=None, commands=None,
-               key_patterns=None, channels=None, categories=[], reset_passwords=False,
+               key_patterns=None, channels=None, categories=None, reset_passwords=False,
                reset_key_patterns=False, reset_channels=False, reset_categories=True):
         categories = self._normalize_categories(categories)
-        if not self._needs_update(enabled, passwords, hashed_passwords, commands,
-                              key_patterns, channels, categories, reset_passwords,
-                              reset_key_patterns, reset_channels, reset_categories):
+        if not self._needs_update(enabled, passwords, hashed_passwords, commands, key_patterns, channels,
+                                  categories, reset_passwords, reset_key_patterns, reset_channels, reset_categories):
             return False
 
         target_passwords, target_hashes = self._extract_passwords(passwords, hashed_passwords)
 
-        params = self._build_acl_params(enabled, target_passwords, target_hashes,commands, key_patterns,
+        params = self._build_acl_params(enabled, target_passwords, target_hashes, commands, key_patterns,
                                         channels, categories, reset_passwords, reset_key_patterns, reset_channels)
-
 
         executed_statements.append(f"Updating user '{self.name}' with params {format_params_to_string(params)}")
         if not self.module.check_mode:
@@ -379,9 +385,9 @@ def main():
             changed = valkey_user.create(enabled=enabled, passwords=passwords, hashed_passwords=hashed_passwords, commands=commands,
                                          key_patterns=key_patterns, channels=channels, categories=categories)
         else:
-            changed = valkey_user.update(enabled=enabled, passwords=passwords, hashed_passwords=hashed_passwords,  commands=commands,
-                                         key_patterns=key_patterns, channels=channels, categories=categories, reset_channels=reset_channels,
-                                         reset_passwords=reset_passwords, reset_key_patterns=reset_key_patterns, reset_categories=reset_categories)
+            changed = valkey_user.update(enabled=enabled, passwords=passwords, hashed_passwords=hashed_passwords, commands=commands,
+                                         key_patterns=key_patterns, channels=channels, categories=categories, reset_passwords=reset_passwords,
+                                         reset_channels=reset_channels, reset_key_patterns=reset_key_patterns, reset_categories=reset_categories)
     else:
         if valkey_user.exists:
             changed = valkey_user.delete()
