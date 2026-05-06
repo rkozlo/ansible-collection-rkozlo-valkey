@@ -185,6 +185,37 @@ def test_normalize_categories(valkey_user, categories, expected):
     assert result == expected
 
 
+@pytest.mark.parametrize("key_patterns,expected", [
+    ([], []),
+    (['~'], ['~']),
+    (['cache*'], ['~cache*']),
+    (['cache*', 'db*'], ['~cache*', '~db*']),
+    (['%R~cache*'], ['%R~cache*']),
+    (['%R~cache*', '%R~db*'], ['%R~cache*', '%R~db*']),
+    (['%RW~cache*'], ['~cache*']),
+    (['~cache*'], ['~cache*']),
+    (['%rw~web:*', '%w~db:*', '%r~mon:*'], ['~web:*', '%W~db:*', '%R~mon:*'])
+])
+def test_normalize_key_patterns_correct_patterns(valkey_user, key_patterns, expected):
+    result = valkey_user._normalize_key_patterns(key_patterns)
+
+    valkey_user.module.fail_json.assert_not_called()
+    assert result == expected
+
+
+@pytest.mark.parametrize("key_patterns", [
+    ['%cache'],
+    ['%'],
+    ['%Ra~'],
+    ['%WA'],
+    ['%key:*']
+])
+def test_normalize_key_patterns_wrong_patterns(valkey_user, key_patterns):
+    valkey_user._normalize_key_patterns(key_patterns)
+
+    valkey_user.module.fail_json.assert_called_once()
+
+
 @pytest.mark.parametrize("reset_channels, channels, current, expected", [
     (False, [], [], False),
     (True, [], [], False),

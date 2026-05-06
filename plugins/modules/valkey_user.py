@@ -64,6 +64,10 @@ options:
   key_patterns:
     description:
       - List of key patters for the user.
+      - By default it works in append mode.
+      - To save this as state use O(reset_key_patterns).
+      - Idempotency for now is flawed. Normally it will be idempotent but when on input redundant patterns it can break it.
+        For example passing ['~test:*', '%R~test:*'] %R is redundand and module for now will detect this as changed.
     type: list
     elements: str
     required: false
@@ -76,7 +80,7 @@ options:
   categories:
     description:
       - List of categories for the user.
-      - Category I(-@all) will be added by default if I(+@all) not passed.
+      - Category I(-@all) will always be added. This is valkey behaviour. Only privilege I(+@all) will turn it off.
     type: list
     elements: str
     default: ['-@all']
@@ -112,9 +116,10 @@ RETURN = r'''
 
 
 import hashlib
+import re
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.rkozlo.valkey.plugins.module_utils.valkey import get_client_common_argument_spec, get_main_conn_kwargs, format_params_to_string
+from ansible_collections.rkozlo.valkey.plugins.module_utils.valkey import get_client_common_argument_spec, get_main_conn_kwargs
 from ansible_collections.rkozlo.valkey.plugins.module_utils.valkey_client import ValkeyClient
 
 executed_statements = []
@@ -211,25 +216,59 @@ class ValkeyUser:
                     result.append(hashlib.sha256(password.encode('utf-8')).hexdigest())
         return result
 
+    def _normalize_key_patterns(self, key_patterns):
+        '''Key patterns needs to normalize for idempotency.'''
+        '''Valkey stores them as upper case so prefixes will be uppered.'''
+        '''Possible prefixes:
+            %R~  - read
+            %W~  - write
+            ~    - read/write
+            %RW~ - just alias to ~
+            %WR~ - as above
+            When not explicity passed prefix pattern will be prefixed with ~ just as default for valkey.
+        '''
+        if not key_patterns:
+            return []
+        pattern = re.compile(r'^(%RW~|%WR~|%R~|%W~|~)?(.*)$', re.IGNORECASE)
+        normalized = []
+
+        for key in key_patterns:
+            match = pattern.match(key)
+            prefix, rest = match.groups()
+
+            if prefix and prefix.upper() in ('%RW~', '%WR~'):
+                normalized.append(f"~{rest}")
+            elif prefix:
+                normalized.append(f"{prefix.upper()}{rest}")  # Normalize case
+            elif key.startswith('%'):
+                self.module.fail_json(msg=f'Invalid key prefix: {key}. Example correct prefixes %R~ %RW~ ~')
+            else:
+                # No prefix passed. Fill with RW
+                normalized.append(f"~{key}")
+
+        return normalized
+
     def _build_acl_params(self, enabled, passwords, hashed_passwords,
                           commands, key_patterns, channels, categories,
                           reset_passwords=False, reset_key_patterns=False, reset_channels=False):
         params = {
             'username': self.name,
             'enabled': enabled,
-            'passwords': passwords,
-            'hashed_passwords': hashed_passwords,
             'reset_passwords': reset_passwords,
-            'reset_key_patterns': reset_key_patterns,
+            'reset_keys': reset_key_patterns,
             'reset_channels': reset_channels
         }
-        if commands is not None:
+        if passwords:
+            params['passwords'] = passwords
+        if hashed_passwords:
+            params['hashed_passwords'] = hashed_passwords
+        if commands:
             params['commands'] = commands
-        if key_patterns is not None:
-            params['key_patterns'] = key_patterns
-        if channels is not None:
+        if key_patterns:
+            params['keys'] = key_patterns
+        if channels:
             params['channels'] = channels
-        if categories is not None:
+        if categories:
             params['categories'] = categories
         return params
 
@@ -303,8 +342,12 @@ class ValkeyUser:
                key_patterns=None, channels=None, categories=None):
         target_passwords, target_hashes = self._extract_passwords(passwords, hashed_passwords)
         categories = self._normalize_categories(categories)
-        params = self._build_acl_params(enabled, target_passwords, target_hashes, commands, key_patterns, channels, categories)
-        executed_statements.append(f"Creating user '{self.name}' with params {format_params_to_string(params)}")
+        key_patterns_normalized = self._normalize_key_patterns(key_patterns)
+        params = self._build_acl_params(enabled, target_passwords, target_hashes, commands, key_patterns_normalized, channels, categories)
+        executed_statements.append({
+            'action': 'create_user',
+            'params': params
+        })
         if not self.module.check_mode:
             self.client._execute('acl_setuser', **params)
 
@@ -314,25 +357,33 @@ class ValkeyUser:
                key_patterns=None, channels=None, categories=None, reset_passwords=False,
                reset_key_patterns=False, reset_channels=False, reset_categories=True):
         categories = self._normalize_categories(categories)
-        if not self._needs_update(enabled, passwords, hashed_passwords, commands, key_patterns, channels,
+        key_patterns_normalized = self._normalize_key_patterns(key_patterns)
+        if not self._needs_update(enabled, passwords, hashed_passwords, commands, key_patterns_normalized, channels,
                                   categories, reset_passwords, reset_key_patterns, reset_channels, reset_categories):
             return False
 
         target_passwords, target_hashes = self._extract_passwords(passwords, hashed_passwords)
 
-        params = self._build_acl_params(enabled, target_passwords, target_hashes, commands, key_patterns,
+        params = self._build_acl_params(enabled, target_passwords, target_hashes, commands, key_patterns_normalized,
                                         channels, categories, reset_passwords, reset_key_patterns, reset_channels)
 
-        executed_statements.append(f"Updating user '{self.name}' with params {format_params_to_string(params)}")
+        executed_statements.append({
+            'action': 'update_user',
+            'params': params
+        })
         if not self.module.check_mode:
             self.client._execute('acl_setuser', **params)
 
         return True
 
     def delete(self):
-        executed_statements.append(f"Deleting user '{self.name}'.")
+        args = [self.name]
+        executed_statements.append({
+            'action': 'delete_user',
+            'args': args
+        })
         if not self.module.check_mode:
-            self.client._execute('acl_deluser', self.name)
+            self.client._execute('acl_deluser', *args)
 
         return True
 
