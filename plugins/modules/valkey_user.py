@@ -73,7 +73,9 @@ options:
     required: false
   channels:
     description:
-      - List of channels for the user.
+      - List of channels for the user to append. If want to reset look O(reset_channels).
+      - Literal string values are accepted. Do not prefix them with I(&).
+      - Notice allchannels here will not be I(&*) like in valkey-server documentation. Result will be I(&allchannels).
     type: list
     elements: str
     required: false
@@ -92,28 +94,116 @@ options:
     default: true
   reset_passwords:
     description:
-      - Whetere overwrite or append passwords.
+      - Whether overwrite or append passwords.
+      - I(true) means existing passwords will be deleted and O(passwords) and O(hashed_passwords) will be added.
+      - I(false) means O(passwords) and O(hashed_passwords) will be added to existing passwords.
+      - When I(true) still will be idempotent. If existing passwords are exact O(passwords) and O(hashed_passwords)
     type: bool
     default: false
   reset_key_patterns:
     description:
-      - Whetere overwrite or append keys.
+      - Whether overwrite or append key patterns.
+      - I(true) means existing key patterns will be deleted and O(key_patterns) will be added.
+      - I(false) means O(key_patterns) will be appended to extisitng key patterns.
+      - When I(true) still will be idempotent if existing key paterns are equal to O(key_patterns).
     type: bool
     default: false
   reset_channels:
     description:
-      - Whetere overwrite or append channels.
+      - Whether overwrite or append channels.
+      - I(true) means existing channels will be deleted and O(channels) will be added.
+      - I(false) means O(channels) will be appended to existing channels.
+      - When I(true) still will be idempotent if existing channels are equal to O(channels).
     type: bool
     default: false
 '''
 
 EXAMPLES = r'''
+- name: Create plain user
+  rkozlo.valkey.valkey_user:
+    name: test_user
 
+- name: Create user with single password in append mode
+  rkozlo.valkey.valkey_user:
+    name: test_user
+    passwords:
+      - test_pass
+
+- name: Create plain user with passwords passed as hash and value in append mode
+  rkozlo.valkey.valkey_user:
+    name: test_user
+    passwords:
+      - test_pass
+    hashed_password:
+      - 10a6e6cc8311a3e2bcc09bf6c199adecd5dd59408c343e926b129c4914f3cb01
+
+- name: Create user with passwords in reset mode
+  rkozlo.valkey.valkey_user:
+    name: test_user
+    passwords:
+      - test_pass
+    reset_passwords: true
+
+- name: Create user with key patterns in append mode
+  rkozlo.valkey.valkey_user:
+    name: test_user
+    key_patterns:
+      - "~test:*"
+      - "%R~readonly:*"
+
+- name: Create user with key patterns in reset mode
+  rkozlo.valkey.valkey_user:
+    name: test_user
+    key_patterns:
+      - "~test:*"
+    reset_key_patterns: true
+
+- name: Create user with channels in append mode
+  rkozlo.valkey.valkey_user:
+    name: test_user
+    channels:
+      - channel1
+      - channel2*
+
+- name: Create user with channels in reset mode
+  rkozlo.valkey.valkey_user:
+    name: test_user
+    channels:
+      - channel1
+    reset_channels: true
+
+- name: Create user with categories
+  rkozlo.valkey.valkey_user:
+    name: test_user
+    categories:
+      - +@connection
 '''
 
 RETURN = r'''
+---
+changed:
+  description: Whether the module made changes.
+  returned: always
+  type: bool
+executed_statements:
+  description: Operations that were executed or would be executed in check mode.
+  returned: on success
+  type: list
+  elements: dict
+  contains:
+    action:
+      description: Operation type (create_user, update_user, delete_user)
+      type: str
+      sample: create_user
+    params:
+      description: Parameters passed to the operation
+      type: dict
+      sample: {"username": "test_user", "enabled": true}
+    args:
+      description: Arguments for delete_user operation
+      type: list
+      sample: ["test_user"]
 '''
-
 
 import hashlib
 import re
@@ -248,6 +338,19 @@ class ValkeyUser:
 
         return normalized
 
+    def _normalize_channels_for_comparison(self, channels):
+        """Remove & prefix from channel patterns. Used only to compare."""
+        if not channels:
+            return []
+
+        normalized = []
+        for channel in channels:
+            if channel.startswith('&'):
+                normalized.append(channel[1:])  # Remove first character
+            else:
+                normalized.append(channel)
+        return normalized
+
     def _build_acl_params(self, enabled, passwords, hashed_passwords,
                           commands, key_patterns, channels, categories,
                           reset_passwords=False, reset_key_patterns=False, reset_channels=False):
@@ -295,10 +398,11 @@ class ValkeyUser:
 
     def _channels_needs_update(self, channels, reset_channels):
         desired_channels = channels or []
-        if set(desired_channels) == set(self.channels):
+        preformated_self_channels = self._normalize_channels_for_comparison(self.channels)
+        if set(desired_channels) == set(preformated_self_channels):
             return False
         if not reset_channels:
-            if set(desired_channels).issubset(set(self.channels)):
+            if set(desired_channels).issubset(set(preformated_self_channels)):
                 return False
         return True
 

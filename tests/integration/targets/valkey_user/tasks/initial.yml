@@ -399,276 +399,490 @@
       - result.changed == False
       - result.executed_statements == []
 
-# Test reset passwords
-- name: Create user with password and reset password in real mode
-  rkozlo.valkey.valkey_user:
-    name: test_user
-    state: present
-    passwords:
-      - test_pass
-    reset_passwords: true
-  register: result
+- name: Test passwords
+  block:
+    - name: Create user with password and reset password in real mode
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        passwords:
+          - test_pass
+        reset_passwords: true
+      register: result
 
-- name: Check result
-  ansible.builtin.assert:
-    that:
-      - result.changed == True
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == True
 
-- name: Create user with password and reset password in real mode - idempotency
-  rkozlo.valkey.valkey_user:
-    name: test_user
-    state: present
-    passwords:
-      - test_pass
-    reset_passwords: true
-  register: result
+    - name: Create user with password and reset password in real mode - idempotency
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        passwords:
+          - test_pass
+        reset_passwords: true
+      register: result
 
-- name: Check result
-  ansible.builtin.assert:
-    that:
-      - result.changed == False
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == False
 
-- name: Check user actuall password
-  rkozlo.valkey.valkey_exec:
-    command: ACL_GETUSER
-    params:
-      username: test_user
-  register: result
+    - name: Check user actuall password
+      rkozlo.valkey.valkey_exec:
+        command: ACL_GETUSER
+        params:
+          username: test_user
+      register: result
 
-- name: Check result
-  ansible.builtin.assert:
-    that:
-      - result.result['passwords'] == ['ba230eb5f5d3cca32e0ef26ed2dc0da5af07ba429d1e824902169fc56fb02e6c']
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.result['passwords'] == ['ba230eb5f5d3cca32e0ef26ed2dc0da5af07ba429d1e824902169fc56fb02e6c']
 
-- name: Alter user with password and reset password, password changed in real mode
-  rkozlo.valkey.valkey_user:
-    name: test_user
-    state: present
-    passwords:
-      - test_pass2
-    reset_passwords: true
-  register: result
+    - name: Alter user with password and reset password, password changed in real mode
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        passwords:
+          - test_pass2
+        reset_passwords: true
+      register: result
 
-- name: Check result
-  ansible.builtin.assert:
-    that:
-      - result.changed == True
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == True
 
-- name: Check user actual password
-  rkozlo.valkey.valkey_exec:
-    command: ACL_GETUSER
-    params:
-      username: test_user
-  register: result
+    - name: Check user actual password
+      rkozlo.valkey.valkey_exec:
+        command: ACL_GETUSER
+        params:
+          username: test_user
+      register: result
 
-- name: Check result
-  ansible.builtin.assert:
-    that:
-      - result.result['passwords'] == ['432f958653128007d836c8d88852deb53e4c4df54bf277489168feea88df3e25']
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.result['passwords'] == ['432f958653128007d836c8d88852deb53e4c4df54bf277489168feea88df3e25']
 
-- name: Alter user with password and reset password, password changed in real mode
-  rkozlo.valkey.valkey_user:
-    name: test_user
-    state: present
-    hashed_passwords:
-      - ba230eb5f5d3cca32e0ef26ed2dc0da5af07ba429d1e824902169fc56fb02e6c
-    reset_passwords: true
-  register: result
+    - name: Alter user with password and reset password, password changed in real mode
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        hashed_passwords:
+          - ba230eb5f5d3cca32e0ef26ed2dc0da5af07ba429d1e824902169fc56fb02e6c
+        reset_passwords: true
+      register: result
 
-- name: Check result
-  ansible.builtin.assert:
-    that:
-      - result.changed == True
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == True
 
-- name: Alter user with password and reset password, password changed in real mode - idempotency
-  rkozlo.valkey.valkey_user:
-    name: test_user
-    state: present
-    hashed_passwords:
-      - ba230eb5f5d3cca32e0ef26ed2dc0da5af07ba429d1e824902169fc56fb02e6c
-    reset_passwords: true
-  register: result
+    - name: Alter user with password and reset password, password changed in real mode - idempotency
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        hashed_passwords:
+          - ba230eb5f5d3cca32e0ef26ed2dc0da5af07ba429d1e824902169fc56fb02e6c
+        reset_passwords: true
+      register: result
 
-- name: Check result
-  ansible.builtin.assert:
-    that:
-      - result.changed == False
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == False
 
-- name: Check user actual password
-  rkozlo.valkey.valkey_exec:
-    command: ACL_GETUSER
-    params:
-      username: test_user
-  register: result
+    - name: Check user actual password
+      rkozlo.valkey.valkey_exec:
+        command: ACL_GETUSER
+        params:
+          username: test_user
+      register: result
 
-- name: Check result
-  ansible.builtin.assert:
-    that:
-      - result.result['passwords'] == ['ba230eb5f5d3cca32e0ef26ed2dc0da5af07ba429d1e824902169fc56fb02e6c']
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.result['passwords'] == ['ba230eb5f5d3cca32e0ef26ed2dc0da5af07ba429d1e824902169fc56fb02e6c']
 
-- name: Drop test user
-  rkozlo.valkey.valkey_user:
-    name: test_user
-    state: absent
-  register: result
+    - name: Drop test user
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: absent
+      register: result
 
-- name: Check result
-  ansible.builtin.assert:
-    that:
-      - result.changed == True
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == True
 
-- name: Ensure user is dropedd
-  rkozlo.valkey.valkey_exec:
-    command: ACL_GETUSER
-    params:
-      username: test_user
-  register: result
+    - name: Ensure user is dropedd
+      rkozlo.valkey.valkey_exec:
+        command: ACL_GETUSER
+        params:
+          username: test_user
+      register: result
 
-- name: Check result
-  ansible.builtin.assert:
-    that:
-      - result.result | length == 0
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.result | length == 0
 
-# Test reset_key_patterns
-- name: Create test user with key_patterns
-  rkozlo.valkey.valkey_user:
-    name: test_user
-    state: present
-    key_patterns:
-      - "cache:*"
-  register: result
+- name: Test key_patterns
+  block:
+    - name: Create test user with key_patterns
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        key_patterns:
+          - "cache:*"
+      register: result
 
-- name: Check result
-  ansible.builtin.assert:
-    that:
-      - result.changed == True
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == True
 
-- name: Check user actual keys
-  rkozlo.valkey.valkey_exec:
-    command: ACL_GETUSER
-    params:
-      username: test_user
-  register: result
+    - name: Check user actual keys
+      rkozlo.valkey.valkey_exec:
+        command: ACL_GETUSER
+        params:
+          username: test_user
+      register: result
 
-- name: Check result
-  ansible.builtin.assert:
-    that:
-      - result.result['keys'] == ['~cache:*']
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.result['keys'] == ['~cache:*']
 
-- name: Alter test user with key_patterns append new pattern
-  rkozlo.valkey.valkey_user:
-    name: test_user
-    state: present
-    key_patterns:
-      - "php:*"
-  register: result
+    - name: Alter test user with key_patterns append new pattern
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        key_patterns:
+          - "php:*"
+      register: result
 
-- name: Check result
-  ansible.builtin.assert:
-    that:
-      - result.changed == True
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == True
 
-- name: Alter test user with key_patterns append new pattern - idempotency
-  rkozlo.valkey.valkey_user:
-    name: test_user
-    state: present
-    key_patterns:
-      - "php:*"
-  register: result
+    - name: Alter test user with key_patterns append new pattern - idempotency
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        key_patterns:
+          - "php:*"
+      register: result
 
-- name: Check result
-  ansible.builtin.assert:
-    that:
-      - result.changed == False
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == False
 
-- name: Check user actual keys
-  rkozlo.valkey.valkey_exec:
-    command: ACL_GETUSER
-    params:
-      username: test_user
-  register: result
+    - name: Check user actual keys
+      rkozlo.valkey.valkey_exec:
+        command: ACL_GETUSER
+        params:
+          username: test_user
+      register: result
 
-- name: Check result
-  ansible.builtin.assert:
-    that:
-      - result.result['keys'] == ['~cache:*', '~php:*']
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.result['keys'] == ['~cache:*', '~php:*']
 
-- name: Alter test user with key_patterns and reset key patterns
-  rkozlo.valkey.valkey_user:
-    name: test_user
-    state: present
-    key_patterns:
-      - "%rw~web:*"
-      - "%w~db:*"
-      - "%r~mon:*"
-    reset_key_patterns: true
-  register: result
+    - name: Alter test user with key_patterns and reset key patterns
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        key_patterns:
+          - "%rw~web:*"
+          - "%w~db:*"
+          - "%r~mon:*"
+        reset_key_patterns: true
+      register: result
 
-- name: Check result
-  ansible.builtin.assert:
-    that:
-      - result.changed == True
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == True
 
-- name: Ensure user is dropedd
-  rkozlo.valkey.valkey_exec:
-    command: ACL_GETUSER
-    params:
-      username: test_user
-  register: result
+    - name: Ensure user is dropedd
+      rkozlo.valkey.valkey_exec:
+        command: ACL_GETUSER
+        params:
+          username: test_user
+      register: result
 
-- name: Alter test user with key_patterns and reset key patterns - idempotency
-  rkozlo.valkey.valkey_user:
-    name: test_user
-    state: present
-    key_patterns:
-      - "%rw~web:*"
-      - "%w~db:*"
-      - "%r~mon:*"
-    reset_key_patterns: true
-  register: result
+    - name: Alter test user with key_patterns and reset key patterns - idempotency
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        key_patterns:
+          - "%rw~web:*"
+          - "%w~db:*"
+          - "%r~mon:*"
+        reset_key_patterns: true
+      register: result
 
-- name: Check result
-  ansible.builtin.assert:
-    that:
-      - result.changed == False
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == False
 
-- name: Check user actual keys
-  rkozlo.valkey.valkey_exec:
-    command: ACL_GETUSER
-    params:
-      username: test_user
-  register: result
+    - name: Check user actual keys
+      rkozlo.valkey.valkey_exec:
+        command: ACL_GETUSER
+        params:
+          username: test_user
+      register: result
 
-- name: Check result
-  ansible.builtin.assert:
-    that:
-      - result.result['keys'] == ['~web:*', '%W~db:*', '%R~mon:*']
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.result['keys'] == ['~web:*', '%W~db:*', '%R~mon:*']
 
-- name: Iterate over test cases
-  vars:
-    _test_case: "{{ item }}"
-  ansible.builtin.include_tasks: test_sequence.yml
-  loop: "{{ test_cases }}"
+    - name: Iterate over test cases
+      vars:
+        _test_case: "{{ item }}"
+      ansible.builtin.include_tasks: test_sequence.yml
+      loop: "{{ test_cases }}"
 
-- name: Drop test user
-  rkozlo.valkey.valkey_user:
-    name: test_user
-    state: absent
-  register: result
+    - name: Drop test user
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: absent
+      register: result
 
-- name: Check result
-  ansible.builtin.assert:
-    that:
-      - result.changed == True
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == True
 
-- name: Ensure user is dropedd
-  rkozlo.valkey.valkey_exec:
-    command: ACL_GETUSER
-    params:
-      username: test_user
-  register: result
+    - name: Ensure user is dropedd
+      rkozlo.valkey.valkey_exec:
+        command: ACL_GETUSER
+        params:
+          username: test_user
+      register: result
 
-- name: Check result
-  ansible.builtin.assert:
-    that:
-      - result.result | length == 0
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.result | length == 0
+
+- name: Test channels
+  block:
+    - name: Create test user with channels
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        channels:
+          - "chatbot*"
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == True
+          - result.executed_statements[0]['params']['channels'] == ['chatbot*']
+
+    - name: Check user actual channels
+      rkozlo.valkey.valkey_exec:
+        command: ACL_GETUSER
+        params:
+          username: test_user
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.result['channels'] == ['&chatbot*']
+
+    - name: Create test user with channels - idempotency
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        channels:
+          - "chatbot*"
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == False
+
+    - name: Alter test user with channels append new channel
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        channels:
+          - "php*"
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == True
+          - result.executed_statements[0]['params']['channels'] == ['php*']
+
+    - name: Check user actual channels
+      rkozlo.valkey.valkey_exec:
+        command: ACL_GETUSER
+        params:
+          username: test_user
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.result['channels'] == ['&chatbot*', '&php*']
+
+    - name: Alter test user with channels append one existing - idempotency
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        channels:
+          - "php*"
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == False
+
+    - name: Alter test user with channels append two existing - idempotency
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        channels:
+          - "php*"
+          - "chatbot*"
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == False
+
+    - name: Alter test user with channels add third channel
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        channels:
+          - "web"
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == True
+          - result.executed_statements[0]['params']['channels'] == ['web']
+
+    - name: Check user actual channels
+      rkozlo.valkey.valkey_exec:
+        command: ACL_GETUSER
+        params:
+          username: test_user
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.result['channels'] == ['&chatbot*', '&php*', '&web']
+
+    - name: Alter test user with channels add third channel -idemportency
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        channels:
+          - "web"
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == False
+
+    - name: Alter test user with channels add all three channels unorderd - idemportency
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        channels:
+          - "web"
+          - "chatbot*"
+          - "php*"
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == False
+
+    - name: Alter test user with all exisitng channels and reset channels - can't change
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        channels:
+          - "web"
+          - "chatbot*"
+          - "php*"
+        reset_channels: true
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == False
+
+    - name: Alter test user with partial exisitng channels and reset channels - should change
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        channels:
+          - "web"
+          - "php*"
+        reset_channels: true
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == True
+          - result.executed_statements[0]['params']['channels'] == ['web', 'php*']
+
+    - name: Check user actual channels
+      rkozlo.valkey.valkey_exec:
+        command: ACL_GETUSER
+        params:
+          username: test_user
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.result['channels'] == ['&web', '&php*']
+
+    - name: Alter test user with partial exisitng channels and reset channels - idempotency
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        channels:
+          - "web"
+          - "php*"
+        reset_channels: true
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == False
+
+    - name: Drop test user
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: absent

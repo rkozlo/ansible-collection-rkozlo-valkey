@@ -187,6 +187,7 @@ def test_normalize_categories(valkey_user, categories, expected):
 
 @pytest.mark.parametrize("key_patterns,expected", [
     ([], []),
+    ([''], ['~']),
     (['~'], ['~']),
     (['cache*'], ['~cache*']),
     (['cache*', 'db*'], ['~cache*', '~db*']),
@@ -220,11 +221,12 @@ def test_normalize_key_patterns_wrong_patterns(valkey_user, key_patterns):
     (False, [], [], False),
     (True, [], [], False),
     (False, ['allchannels'], [], True),
-    (False, ['allchannels'], ['allchannels'], False),
-    (True, ['allchannels'], ['allchannels'], False),
-    (False, ['allchannels', '&data.?'], ['allchannels'], True),
-    (True, ['&data.?'], ['allchannels', '&data.?'], True),
-    (False, ['&data.?'], ['allchannels', '&data.?'], False),
+    (False, ['allchannels'], ['&allchannels'], False),
+    (True, ['allchannels'], ['&allchannels'], False),
+    (False, ['allchannels', '&data.?'], ['&allchannels'], True),
+    (True, ['data.?'], ['&allchannels', '&data.?'], True),
+    (False, ['data.?'], ['&allchannels', '&data.?'], False),
+    (False, ['&data.?'], ['&allchannels', '&data.?'], True),
 ])
 def test_channels_needs_update(valkey_user, reset_channels, channels, current, expected,):
     valkey_user._channels = current
