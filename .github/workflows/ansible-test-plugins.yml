@@ -83,3 +83,25 @@ jobs:
       - uses: codecov/codecov-action@v6
         with:
           fail_ci_if_error: false
+  integration:
+    runs-on: ubuntu-latest
+    name: "valkey=${{ matrix.valkey_version }} ansible=${{ matrix.ansible }}"
+
+    strategy:
+      fail-fast: false
+      matrix:
+        ansible:
+          - stable-2.18
+          - stable-2.19
+          - stable-2.20
+        valkey_version:
+          - "8.1.7"
+          - "9.0.4"
+    steps:
+      - name: Run integration tests
+        uses: ansible-community/ansible-test-gh-action@release/v1
+        with:
+          ansible-core-version: ${{ matrix.ansible}}
+          testing-type: integration
+          coverage: never
+          extra-args: "-e valkey_version=${{ matrix.valkey_version}}"
