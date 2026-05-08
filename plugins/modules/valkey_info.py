@@ -10,7 +10,7 @@ DOCUMENTATION = r'''
 ---
 module: valkey_info
 
-version_added: "0.0.1"
+version_added: "0.1.0"
 
 author:
   - Rafał Kozłowski (@rkozlo)

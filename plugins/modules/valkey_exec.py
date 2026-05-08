@@ -10,7 +10,7 @@ DOCUMENTATION = r'''
 ---
 module: valkey_exec
 
-version_added: "0.0.1"
+version_added: "0.1.0"
 
 author:
   - Rafał Kozłowski (@rkozlo)
@@ -118,10 +118,11 @@ class ValkeyExec:
         executed_statements.append(
             {'command': self.command, 'args': self.args, 'params': self.params}
         )
+        result = []
         if not self.module.check_mode:
             result = self.client._execute(self.command, *self.args, **self.params)
 
-        return result or []
+        return [] if result is None else result
 
 
 def main():

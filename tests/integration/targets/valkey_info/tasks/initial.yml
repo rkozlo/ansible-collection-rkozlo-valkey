@@ -1,0 +1,16 @@
+---
+- name: Get specific sections
+  rkozlo.valkey.valkey_info:
+    login_host: localhost
+    login_port: 6379
+    sections:
+      - server
+      - memory
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+      - result.info.active_defrag_running is defined
+      - result.info.maxmemory is defined

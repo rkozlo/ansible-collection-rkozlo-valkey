@@ -131,6 +131,24 @@ def test_compare_passwords(valkey_user, desired, current, expected):
     assert result == expected
 
 
+@pytest.mark.parametrize("current,categories,expected", [
+    (['-@all'], [], False),
+    (['-@all'], ['-@all'], False),
+    (['-@all', '+@read'], ['-@all', '+@read'], False),
+    (['-@all', '+@read'], ['-@all'], True),
+    (['-@all'], ['+@read'], True),
+    (['-@all', '+@write'], ['+@read'], True),
+    (['-@all', '+@write', '+@read'], ['+@read'], False),
+    (['-@all', '+@write', '+@read'], ['-@all'], True),
+])
+def test_categories_needs_update(valkey_user, current, categories, expected):
+    valkey_user._categories = current
+
+    result = valkey_user._categories_needs_update(categories)
+
+    assert result is expected
+
+
 @pytest.mark.parametrize("compare_result,reset_passwords,current_set,normalized_set,expected", [
     (True, False, [], [], False),                       # Already equal
     (True, True, [], [], False),                        # Already equal reset
@@ -173,16 +191,34 @@ def test_key_patterns_needs_update(valkey_user, key_patterns, current, reset_key
 
 
 @pytest.mark.parametrize("categories,expected", [
-    ([], ['-@all']),
+    ([], []),
     (['+@all'], ['+@all']),
     (['-@all'], ['-@all']),
-    (['+@read'], ['-@all', '+@read']),
-    (['+@read', '+@connection'], ['-@all', '+@read', '+@connection']),
+    (['-all'], ['-@all']),
+    (['+all'], ['+@all']),
+    (['-@all', '+read'], ['-@all', '+@read']),
+    (['+@read'], ['+@read']),
+    (['+@read', '+@connection'], ['+@read', '+@connection']),
 ])
-def test_normalize_categories(valkey_user, categories, expected):
+def test_normalize_proper_categories(valkey_user, mocker, categories, expected):
+    mocker.patch.object(valkey_user, '_get_available_categories', return_value=['keyspace', 'read', 'write', 'set', 'connection'])
     result = valkey_user._normalize_categories(categories)
 
+    valkey_user.module.fail_json.assert_not_called()
     assert result == expected
+
+
+@pytest.mark.parametrize("categories", [
+    (['all']),
+    (['-all', 'readd']),
+    (['=read']),
+    (['`a\\'])
+])
+def test_normalize_wrong_categories(valkey_user, mocker, categories):
+    mocker.patch.object(valkey_user, '_get_available_categories', return_value=['keyspace', 'read', 'write', 'set'])
+    valkey_user._normalize_categories(categories)
+
+    valkey_user.module.fail_json.assert_called_once()
 
 
 @pytest.mark.parametrize("key_patterns,expected", [
@@ -217,6 +253,54 @@ def test_normalize_key_patterns_wrong_patterns(valkey_user, key_patterns):
     valkey_user.module.fail_json.assert_called_once()
 
 
+@pytest.mark.parametrize("commands, expected", [
+    ([], []),
+    (['+get'], ['+get']),
+    (['-get'], ['-get']),
+    (['-GET'], ['-get']),
+    (['-Get'], ['-get']),
+    (['-get', '+set'], ['-get', '+set']),
+    (['+command|count'], ['+command|count']),
+])
+def test_normalize_correct_commands(valkey_user, mocker, commands, expected):
+    mocker.patch.object(valkey_user, '_get_available_commands', return_value=['get', 'set', 'command|count'])
+    result = valkey_user._normalize_commands(commands)
+
+    assert result == expected
+    valkey_user.module.fail_json.assert_not_called()
+
+
+@pytest.mark.parametrize("commands", [
+    ['get'],
+    ['=get'],
+    ['!get'],
+    ['gett'],
+    ['+get', 'sett'],
+    ['command||count'],
+    ['command|count', '++set'],
+])
+def test_normalize_invalid_commands(valkey_user, mocker, commands):
+    mocker.patch.object(valkey_user, '_get_available_commands', return_value=['get', 'set', 'command|count'])
+
+    valkey_user._normalize_commands(commands)
+    valkey_user.module.fail_json.assert_called_once()
+
+
+@pytest.mark.parametrize("commands, current, expected", [
+    ([], [], False),
+    ([], [], False),
+    (['+get'], [], True),
+    (['+get'], ['+get'], False),
+    (['+get', '+set'], ['+get'], False),
+    (['+get'], ['+get', '+set'], True),
+])
+def test_channels_needs_update(valkey_user, commands, current, expected,):
+    valkey_user._commands = current
+    result = valkey_user._commands_needs_update(commands)
+
+    assert result is expected
+
+
 @pytest.mark.parametrize("reset_channels, channels, current, expected", [
     (False, [], [], False),
     (True, [], [], False),
@@ -240,6 +324,7 @@ def test_needs_update_enabled_change_from_false_to_true(valkey_user, mocker):
     mocker.patch.object(valkey_user, '_passwords_needs_update', return_value=False)
     mocker.patch.object(valkey_user, '_key_patterns_needs_update', return_value=False)
     mocker.patch.object(valkey_user, '_channels_needs_update', return_value=False)
+    mocker.patch.object(valkey_user, '_categories_needs_update', return_value=False)
     valkey_user._enabled = False
     valkey_user._commands = []
     valkey_user._categories = []
@@ -257,6 +342,7 @@ def test_needs_update_enabled_change_from_true_to_false(valkey_user, mocker):
     mocker.patch.object(valkey_user, '_passwords_needs_update', return_value=False)
     mocker.patch.object(valkey_user, '_key_patterns_needs_update', return_value=False)
     mocker.patch.object(valkey_user, '_channels_needs_update', return_value=False)
+    mocker.patch.object(valkey_user, '_categories_needs_update', return_value=False)
     valkey_user._enabled = True
     valkey_user._commands = []
     valkey_user._categories = []
@@ -274,6 +360,7 @@ def test_needs_update_plain_no_change_needed(valkey_user, mocker):
     mocker.patch.object(valkey_user, '_passwords_needs_update', return_value=False)
     mocker.patch.object(valkey_user, '_key_patterns_needs_update', return_value=False)
     mocker.patch.object(valkey_user, '_channels_needs_update', return_value=False)
+    mocker.patch.object(valkey_user, '_categories_needs_update', return_value=False)
     valkey_user._enabled = True
     valkey_user._commands = []
     valkey_user._categories = []
@@ -309,6 +396,7 @@ def test_needs_update_passwords_need_update(valkey_user, mocker):
     mocker.patch.object(valkey_user, '_passwords_needs_update', return_value=True)
     mocker.patch.object(valkey_user, '_key_patterns_needs_update', return_value=False)
     mocker.patch.object(valkey_user, '_channels_needs_update', return_value=False)
+    mocker.patch.object(valkey_user, '_categories_needs_update', return_value=False)
     valkey_user._enabled = True
     valkey_user._commands = []
     valkey_user._categories = []
@@ -326,6 +414,7 @@ def test_needs_update_key_patterns_need_update(valkey_user, mocker):
     mocker.patch.object(valkey_user, '_passwords_needs_update', return_value=False)
     mocker.patch.object(valkey_user, '_key_patterns_needs_update', return_value=True)
     mocker.patch.object(valkey_user, '_channels_needs_update', return_value=False)
+    mocker.patch.object(valkey_user, '_categories_needs_update', return_value=False)
     valkey_user._enabled = True
     valkey_user._commands = []
     valkey_user._categories = []
@@ -343,6 +432,7 @@ def test_needs_update_channels_need_update(valkey_user, mocker):
     mocker.patch.object(valkey_user, '_passwords_needs_update', return_value=False)
     mocker.patch.object(valkey_user, '_key_patterns_needs_update', return_value=False)
     mocker.patch.object(valkey_user, '_channels_needs_update', return_value=True)
+    mocker.patch.object(valkey_user, '_categories_needs_update', return_value=False)
     valkey_user._enabled = True
     valkey_user._commands = []
     valkey_user._categories = []
@@ -360,6 +450,7 @@ def test_needs_update_commands_different(valkey_user, mocker):
     mocker.patch.object(valkey_user, '_passwords_needs_update', return_value=False)
     mocker.patch.object(valkey_user, '_key_patterns_needs_update', return_value=False)
     mocker.patch.object(valkey_user, '_channels_needs_update', return_value=False)
+    mocker.patch.object(valkey_user, '_categories_needs_update', return_value=False)
     valkey_user._enabled = True
     valkey_user._commands = ['get']
     valkey_user._categories = []
@@ -377,6 +468,7 @@ def test_needs_update_commands_same_different_order(valkey_user, mocker):
     mocker.patch.object(valkey_user, '_passwords_needs_update', return_value=False)
     mocker.patch.object(valkey_user, '_key_patterns_needs_update', return_value=False)
     mocker.patch.object(valkey_user, '_channels_needs_update', return_value=False)
+    mocker.patch.object(valkey_user, '_categories_needs_update', return_value=False)
     valkey_user._enabled = True
     valkey_user._commands = ['set', 'get']
     valkey_user._categories = []
@@ -394,9 +486,9 @@ def test_needs_update_categories_different(valkey_user, mocker):
     mocker.patch.object(valkey_user, '_passwords_needs_update', return_value=False)
     mocker.patch.object(valkey_user, '_key_patterns_needs_update', return_value=False)
     mocker.patch.object(valkey_user, '_channels_needs_update', return_value=False)
+    mocker.patch.object(valkey_user, '_categories_needs_update', return_value=True)
     valkey_user._enabled = True
     valkey_user._commands = []
-    valkey_user._categories = ['@read']
 
     result = valkey_user._needs_update(
         enabled=True, commands=[], categories=['@admin'],

@@ -104,4 +104,3 @@ jobs:
           ansible-core-version: ${{ matrix.ansible}}
           testing-type: integration
           coverage: never
-          extra-args: "-e valkey_version=${{ matrix.valkey_version}}"

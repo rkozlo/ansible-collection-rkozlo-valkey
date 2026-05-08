@@ -10,7 +10,7 @@ DOCUMENTATION = r'''
 ---
 module: valkey_user
 
-version_added: "0.0.1"
+version_added: "0.1.0"
 
 author:
   - Rafał Kozłowski (@rkozlo)
@@ -58,6 +58,11 @@ options:
   commands:
     description:
       - List of commands for the user.
+      - Commands must be prefixed with I(+) or I(-).
+      - Commands works only in append mode.
+      - Valkey doesn't has an option to reset commands.If needed you can achieve this togehter with O(categories).
+        When passed I(-@all) unlisted commands will be wiped.
+        For now workaround needed to acutally revoke if O(categories) not differs.
     type: list
     elements: str
     required: false
@@ -82,16 +87,16 @@ options:
   categories:
     description:
       - List of categories for the user.
-      - Category I(-@all) will always be added. This is valkey behaviour. Only privilege I(+@all) will turn it off.
+      - Categories has to be prefixed with I(-) or I(+).
+      - Categories can be passed also without I(@).
+      - Module itself doesn't have default value. Valkey for new users will apply I(-@all) if I(+@all) not passed explicity.
+      - Order of passed values matters.
+      - Option is idempotent only if passed categories makes sense.
+      - Option does not touch categories for existing users if not used in module.
+      - Option will be working in append mode. If you want to keep it as state best practise is explicity pass I(-@all) as first category.
+      - To reset user categories pass I(-@all)
     type: list
     elements: str
-    default: ['-@all']
-  reset_categories:
-    description:
-      - Wheter append passed categories to present or reset to default.
-      - Used together with O(categories) will set at state.
-    type: bool
-    default: true
   reset_passwords:
     description:
       - Whether overwrite or append passwords.
@@ -177,6 +182,28 @@ EXAMPLES = r'''
     name: test_user
     categories:
       - +@connection
+
+- name: Create user with categories
+  rkozlo.valkey.valkey_user:
+    name: test_user
+    categories:
+      - -@all
+      - +@connection
+
+- name: Create user with commands
+  rkozlo.valkey.valkey_user:
+    name: test_user
+    commands:
+      - +get
+
+- name: Create user with commands and categories
+  rkozlo.valkey.valkey_user:
+    name: test_user
+    commands:
+      - -get
+    categories:
+      - -@all
+      - +read
 '''
 
 RETURN = r'''
@@ -351,6 +378,44 @@ class ValkeyUser:
                 normalized.append(channel)
         return normalized
 
+    def _normalize_commands(self, commands):
+        if not commands:
+            return []
+        errors = []
+        normalized = []
+        available_commands = self._get_available_commands()
+        for command in commands:
+            if not command.startswith(('+', '-')):
+                errors.append(f'Invalid command {command}. Should starts with + or -.')
+                continue
+
+            sign = command[0]
+            rest = command[1:].lower()
+
+            # Do not allow categories.
+            if rest.startswith('@'):
+                errors.append(f'Invalid command {command}. For categories use option categories.')
+
+            # Check if command is supported in current version.
+            if rest not in available_commands:
+                errors.append(f"Invalid command: {command}. Not supported in valkey.")
+            normalized.append(sign + rest)
+
+        if errors:
+            self.module.fail_json(msg=" | ".join(errors))
+        return normalized
+
+    def _get_available_commands(self):
+        return self.client._execute("command_list")
+
+    def _commands_needs_update(self, commands):
+        if set(commands) == set(self.commands):
+            return False
+
+        if set(commands).issubset(set(self.commands)):
+            return False
+        return True
+
     def _build_acl_params(self, enabled, passwords, hashed_passwords,
                           commands, key_patterns, channels, categories,
                           reset_passwords=False, reset_key_patterns=False, reset_channels=False):
@@ -406,48 +471,78 @@ class ValkeyUser:
                 return False
         return True
 
-    def _categories_needs_update(self, categories, reset_categories=True):
-        '''Categories in server only works in append mode. Here workaround for reset if passed.'''
-        '''Idempotency we mean passed categories are part of current categories.'''
-        '''Also by default -@all is applied to empty new users.'''
+    def _categories_needs_update(self, categories):
+        desired = categories or []
+        current = set(self.categories)
 
-        desired_categories = categories or []
-        if (set(desired_categories) != set(self.categories)) and reset_categories:
-            return True
-        if set(desired_categories).issubset(set(self.categories)):
-            return False
-        return True
+        # Special case: resetting to default
+        if desired == ['-@all']:
+            # Need update if current has any categories beyond implicit -@all
+            return current != set(['-@all'])
+
+        # Normal case: check if desired is already fully present
+        return not set(desired).issubset(current)
 
     def _normalize_categories(self, categories):
-        desired_categories = categories or []
-        if not desired_categories or all('@all' not in c for c in desired_categories):
-            desired_categories.insert(0, '-@all')
-        return desired_categories
+        available_categories = self._get_available_categories()
+        if not categories:
+            return []
+        errors = []
+        normalized = []
+
+        for cat_rule in categories:
+            # Extract sign and category
+            if not cat_rule.startswith(('+', '-')):
+                errors.append(f"Invalid category rule '{cat_rule}': must start with + or -")
+
+            # Prereserve sign
+            sign = cat_rule[0]
+            rest = cat_rule[1:]
+
+            # Remove @. Need for validation.
+            if rest.startswith('@'):
+                cat_name = rest[1:]
+            else:
+                cat_name = rest
+
+            # Check if category is supported in current version.
+            if cat_name != 'all' and cat_name not in available_categories:
+                errors.append(f"Invalid category: {cat_name}")
+
+            # Normalize: sign + '@' + category
+            normalized.append(f"{sign}@{cat_name}")
+        if errors:
+            self.module.fail_json(msg=" | ".join(errors))
+        return normalized
+
+    def _get_available_categories(self):
+        return self.client._execute('acl_cat')
 
     def _needs_update(self, enabled, passwords, hashed_passwords, commands, key_patterns, channels,
-                      categories, reset_passwords=False, reset_key_patterns=False, reset_channels=False,
-                      reset_categories=True):
+                      categories, reset_passwords=False, reset_key_patterns=False, reset_channels=False):
         if self.enabled != enabled:
             return True
         if self._passwords_needs_update(passwords, hashed_passwords, reset_passwords):
             return True
-        desired_commands = commands or []
-        if set(self.commands) != set(desired_commands):
+        if self._commands_needs_update(commands):
             return True
         if self._key_patterns_needs_update(key_patterns, reset_key_patterns):
             return True
         if self._channels_needs_update(channels, reset_channels):
             return True
-        if self._categories_needs_update(categories, reset_categories):
+        if self._categories_needs_update(categories):
             return True
         return False
 
     def create(self, enabled=True, passwords=None, hashed_passwords=None, commands=None,
                key_patterns=None, channels=None, categories=None):
+
         target_passwords, target_hashes = self._extract_passwords(passwords, hashed_passwords)
         categories = self._normalize_categories(categories)
-        key_patterns_normalized = self._normalize_key_patterns(key_patterns)
-        params = self._build_acl_params(enabled, target_passwords, target_hashes, commands, key_patterns_normalized, channels, categories)
+        key_patterns = self._normalize_key_patterns(key_patterns)
+        commands = self._normalize_commands(commands)
+
+        params = self._build_acl_params(enabled, target_passwords, target_hashes, commands, key_patterns, channels, categories)
         executed_statements.append({
             'action': 'create_user',
             'params': params
@@ -459,16 +554,18 @@ class ValkeyUser:
 
     def update(self, enabled=None, passwords=None, hashed_passwords=None, commands=None,
                key_patterns=None, channels=None, categories=None, reset_passwords=False,
-               reset_key_patterns=False, reset_channels=False, reset_categories=True):
-        categories = self._normalize_categories(categories)
-        key_patterns_normalized = self._normalize_key_patterns(key_patterns)
-        if not self._needs_update(enabled, passwords, hashed_passwords, commands, key_patterns_normalized, channels,
-                                  categories, reset_passwords, reset_key_patterns, reset_channels, reset_categories):
-            return False
+               reset_key_patterns=False, reset_channels=False):
 
         target_passwords, target_hashes = self._extract_passwords(passwords, hashed_passwords)
+        categories = self._normalize_categories(categories)
+        key_patterns = self._normalize_key_patterns(key_patterns)
+        commands = self._normalize_commands(commands)
 
-        params = self._build_acl_params(enabled, target_passwords, target_hashes, commands, key_patterns_normalized,
+        if not self._needs_update(enabled, passwords, hashed_passwords, commands, key_patterns, channels,
+                                  categories, reset_passwords, reset_key_patterns, reset_channels):
+            return False
+
+        params = self._build_acl_params(enabled, target_passwords, target_hashes, commands, key_patterns,
                                         channels, categories, reset_passwords, reset_key_patterns, reset_channels)
 
         executed_statements.append({
@@ -503,11 +600,10 @@ def main():
         commands=dict(type='list', elements='str', required=False, default=None),
         key_patterns=dict(type='list', elements='str', required=False, default=None, no_log=False),
         channels=dict(type='list', elements='str', required=False, default=None),
-        categories=dict(type='list', elements='str', default=['-@all']),
+        categories=dict(type='list', elements='str'),
         reset_passwords=dict(type='bool', default=False),
         reset_key_patterns=dict(type='bool', default=False),
-        reset_channels=dict(type='bool', default=False),
-        reset_categories=dict(type='bool', default=True)
+        reset_channels=dict(type='bool', default=False)
     )
     module = AnsibleModule(
         argument_spec=argument_spec,
@@ -531,7 +627,6 @@ def main():
     reset_passwords = module.params['reset_passwords']
     reset_key_patterns = module.params['reset_key_patterns']
     reset_channels = module.params['reset_channels']
-    reset_categories = module.params['reset_categories']
 
     valkey_user = ValkeyUser(module, client, name=name)
     changed = False
@@ -542,7 +637,7 @@ def main():
         else:
             changed = valkey_user.update(enabled=enabled, passwords=passwords, hashed_passwords=hashed_passwords, commands=commands,
                                          key_patterns=key_patterns, channels=channels, categories=categories, reset_passwords=reset_passwords,
-                                         reset_channels=reset_channels, reset_key_patterns=reset_key_patterns, reset_categories=reset_categories)
+                                         reset_channels=reset_channels, reset_key_patterns=reset_key_patterns)
     else:
         if valkey_user.exists:
             changed = valkey_user.delete()

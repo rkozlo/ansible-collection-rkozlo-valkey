@@ -1,5 +1,5 @@
 ---
-- name: Alter user to target state {{ _test_case.name }}
+- name: Alter user to target state {{ _test_case.name }} - {{ _scenario_name }}
   rkozlo.valkey.valkey_user:
     name: "{{ _test_case.name | default(omit) }}"
     enabled: "{{ _test_case.enable | default(omit) }}"
@@ -12,16 +12,15 @@
     reset_passwords: "{{ _test_case.reset_passwords | default(omit) }}"
     reset_key_patterns: "{{ _test_case.reset_key_patterns | default(omit) }}"
     reset_channels: "{{ _test_case.append_channels | default(omit) }}"
-    reset_categories: "{{ _test_case.reset_categories | default(omit) }}"
   register: result
 
-- name: Check the return values {{ _test_case.name }}
+- name: Check the return values {{ _test_case.name }} - {{ _scenario_name }}
   ansible.builtin.assert:
     that:
       - result.changed == true
       - result.executed_statements[0] == _test_case.__expected_alter
 
-- name: Alter user to target state {{ _test_case.name }} - idempotency
+- name: Alter user to target state {{ _test_case.name }} - {{ _scenario_name }} - idempotency
   rkozlo.valkey.valkey_user:
     name: "{{ _test_case.name | default(omit) }}"
     enabled: "{{ _test_case.enable | default(omit) }}"
@@ -34,16 +33,15 @@
     reset_passwords: "{{ _test_case.reset_passwords | default(omit) }}"
     reset_key_patterns: "{{ _test_case.reset_key_patterns | default(omit) }}"
     reset_channels: "{{ _test_case.reset_channels | default(omit) }}"
-    reset_categories: "{{ _test_case.reset_categories | default(omit) }}"
   register: result
 
-- name: Check the return values {{ _test_case.name }}
+- name: Check the return values {{ _test_case.name }} - {{ _scenario_name }}
   ansible.builtin.assert:
     that:
       - result.changed == false
       - result.executed_statements == []
 
-- name: Drop user {{ _test_case.name }}
+- name: Drop user {{ _test_case.name }} - {{ _scenario_name }}
   rkozlo.valkey.valkey_user:
     name: "{{ _test_case.name }}"
     state: absent

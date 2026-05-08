@@ -4,35 +4,35 @@
       - name: test_user_1
         enabled: true
         passwords: ['test_pass']
-        __expected_query: {"action": "create_user", "params": {"username": "test_user_1", "enabled": true, "passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false, "categories": ['-@all']}}
-        __expected_alter: {"action": "update_user", "params": {"username": "test_user_1", "enabled": true, "passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false, "categories": ['-@all']}}
+        __expected_query: {"action": "create_user", "params": {"username": "test_user_1", "enabled": true, "passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false}}
+        __expected_alter: {"action": "update_user", "params": {"username": "test_user_1", "enabled": true, "passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false}}
         __expected_drop: {"action": "delete_user", "args": ["test_user_1"]}
       - name: test_user_2
         enabled: true
         passwords: ['test_pass']
-        __expected_query: {"action": "create_user", "params": {"username": "test_user_2", "enabled": true, "passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false, "categories": ['-@all']}}
-        __expected_alter: {"action": "update_user", "params": {"username": "test_user_2", "enabled": true, "passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false, "categories": ['-@all']}}
+        __expected_query: {"action": "create_user", "params": {"username": "test_user_2", "enabled": true, "passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false}}
+        __expected_alter: {"action": "update_user", "params": {"username": "test_user_2", "enabled": true, "passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false}}
         __expected_drop: {"action": "delete_user", "args": ["test_user_2"]}
       - name: test_user_4
         enabled: true
         hashed_passwords: ['10a6e6cc8311a3e2bcc09bf6c199adecd5dd59408c343e926b129c4914f3cb01']
-        __expected_query: {"action": "create_user", "params": {"username": "test_user_4", "enabled": true, "hashed_passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false, "categories": ['-@all']}}
-        __expected_alter: {"action": "update_user", "params": {"username": "test_user_4", "enabled": true, "hashed_passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false, "categories": ['-@all']}}
+        __expected_query: {"action": "create_user", "params": {"username": "test_user_4", "enabled": true, "hashed_passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false}}
+        __expected_alter: {"action": "update_user", "params": {"username": "test_user_4", "enabled": true, "hashed_passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false}}
         __expected_drop: {"action": "delete_user", "args": ["test_user_4"]}
       - name: test_user_5
         enabled: true
         passwords: ['ansi']
         hashed_passwords: ['10a6e6cc8311a3e2bcc09bf6c199adecd5dd59408c343e926b129c4914f3cb01']
-        __expected_query: {"action": "create_user", "params": {"username": "test_user_5", "enabled": true, "passwords": ['+********'], "hashed_passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false, "categories": ['-@all']}}
-        __expected_alter: {"action": "update_user", "params": {"username": "test_user_5", "enabled": true, "passwords": ['+********'], "hashed_passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false, "categories": ['-@all']}}
+        __expected_query: {"action": "create_user", "params": {"username": "test_user_5", "enabled": true, "passwords": ['+********'], "hashed_passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false}}
+        __expected_alter: {"action": "update_user", "params": {"username": "test_user_5", "enabled": true, "passwords": ['+********'], "hashed_passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false}}
         __expected_drop: {"action": "delete_user", "args": ["test_user_5"]}
       - name: test_user_6
         enabled: true
         passwords: ['ansi']
         hashed_passwords: ['10a6e6cc8311a3e2bcc09bf6c199adecd5dd59408c343e926b129c4914f3cb01']
         reset_passwords: true
-        __expected_query: {"action": "create_user", "params": {"username": "test_user_6", "enabled": true, "passwords": ['+********'], "hashed_passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false, "categories": ['-@all']}}
-        __expected_alter: {"action": "update_user", "params": {"username": "test_user_6", "enabled": true, "passwords": ['+********'], "hashed_passwords": ['+********'], "reset_passwords": true, "reset_keys": false, "reset_channels": false, "categories": ['-@all']}}
+        __expected_query: {"action": "create_user", "params": {"username": "test_user_6", "enabled": true, "passwords": ['+********'], "hashed_passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false}}
+        __expected_alter: {"action": "update_user", "params": {"username": "test_user_6", "enabled": true, "passwords": ['+********'], "hashed_passwords": ['+********'], "reset_passwords": true, "reset_keys": false, "reset_channels": false}}
         __expected_drop: {"action": "delete_user", "args": ["test_user_6"]}
       - name: test_user_7
         enabled: true
@@ -70,8 +70,7 @@
           'enabled': True,
           'reset_passwords': False,
           'reset_keys': False,
-          'reset_channels': False,
-          'categories': ['-@all']
+          'reset_channels': False
         }
 
 - name: Check user is not created
@@ -103,8 +102,7 @@
           'enabled': True,
           'reset_passwords': False,
           'reset_keys': False,
-          'reset_channels': False,
-          'categories': ['-@all']
+          'reset_channels': False
         }
 
 - name: Check user is created
@@ -156,8 +154,7 @@
           'passwords': ['+********'],
           'reset_passwords': False,
           'reset_keys': False,
-          'reset_channels': False,
-          'categories': ['-@all']
+          'reset_channels': False
         }
 
 - name: Check user is not altered
@@ -215,8 +212,7 @@
           'passwords': ['+********'],
           'reset_passwords': False,
           'reset_keys': False,
-          'reset_channels': False,
-          'categories': ['-@all']
+          'reset_channels': False
         }
 
 - name: Check user is altered
@@ -262,8 +258,7 @@
           'passwords': ['+********'],
           'reset_passwords': False,
           'reset_keys': False,
-          'reset_channels': False,
-          'categories': ['-@all']
+          'reset_channels': False
         }
       - result.changed == True
 
@@ -310,8 +305,7 @@
           'passwords': ['+********'],
           'reset_passwords': True,
           'reset_keys': False,
-          'reset_channels': False,
-          'categories': ['-@all']
+          'reset_channels': False
         }
 
 - name: Check user is altered
@@ -646,12 +640,6 @@
         that:
           - result.result['keys'] == ['~web:*', '%W~db:*', '%R~mon:*']
 
-    - name: Iterate over test cases
-      vars:
-        _test_case: "{{ item }}"
-      ansible.builtin.include_tasks: test_sequence.yml
-      loop: "{{ test_cases }}"
-
     - name: Drop test user
       rkozlo.valkey.valkey_user:
         name: test_user
@@ -886,3 +874,448 @@
       rkozlo.valkey.valkey_user:
         name: test_user
         state: absent
+
+- name: Test categories
+  block:
+    - name: Create test user with empty categories
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == True
+          - result.executed_statements[0]['params']['categories'] is not defined
+
+    - name: Check user actual channels
+      rkozlo.valkey.valkey_exec:
+        command: ACL_GETUSER
+        params:
+          username: test_user
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.result['categories'] == ['-@all']
+
+    - name: Create test user with categories -@all
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        categories:
+          - -@all
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == False
+
+    - name: Create test user with categories -all
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        categories:
+          - -all
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == False
+
+    - name: Update test user append categories
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        categories:
+          - +read
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == True
+          - result.executed_statements[0]['params']['categories'] == ['+@read']
+
+    - name: Check user actual channels
+      rkozlo.valkey.valkey_exec:
+        command: ACL_GETUSER
+        params:
+          username: test_user
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.result['categories'] == ['-@all', '+@read']
+
+    - name: Update test user append categories - idempotency
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        categories:
+          - +read
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == False
+
+    - name: Update test user append another category
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        categories:
+          - +connection
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == True
+          - result.executed_statements[0]['params']['categories'] == ['+@connection']
+
+    - name: Check user actual channels
+      rkozlo.valkey.valkey_exec:
+        command: ACL_GETUSER
+        params:
+          username: test_user
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.result['categories'] == ['-@all', '+@read', '+@connection']
+
+    - name: Update test user append categories - idempotency
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        categories:
+          - +@connection
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == False
+
+    - name: Update test user append two existing categories - idempotency
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        categories:
+          - +@read
+          - +@connection
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == False
+
+    - name: Update test user append all existing categories - idempotency
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        categories:
+          - -@all
+          - +@read
+          - +@connection
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == False
+
+    - name: Update test user do not pass categories
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == False
+
+    - name: Update test user reset all categories
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        categories:
+          - -all
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == True
+          - result.executed_statements[0]['params']['categories'] == ['-@all']
+
+    - name: Check user actual channels
+      rkozlo.valkey.valkey_exec:
+        command: ACL_GETUSER
+        params:
+          username: test_user
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.result['categories'] == ['-@all']
+
+    - name: Update test user not supported category
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        categories:
+          - -boo
+      register: result
+      ignore_errors: true
+
+    - name: Check ret values
+      ansible.builtin.assert:
+        that:
+        - result is failed
+
+    - name: Update test user wrong prefix
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        categories:
+          - read
+      register: result
+      ignore_errors: true
+
+    - name: Check ret values
+      ansible.builtin.assert:
+        that:
+        - result is failed
+
+    - name: Drop test user
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: absent
+
+- name: Test commands
+  block:
+    - name: Create test user with commands
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        commands:
+          - +get
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == True
+          - result.executed_statements[0]['params']['commands'] == ['+get']
+
+    - name: Check user actual commands
+      rkozlo.valkey.valkey_exec:
+        command: ACL_GETUSER
+        params:
+          username: test_user
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.result['commands'] == ['+get']
+
+    - name: Create test user with commands - idempotency
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        commands:
+          - +get
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == False
+
+    - name: Create test user with append new command
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        commands:
+          - +set
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == True
+
+    - name: Check user actual commands
+      rkozlo.valkey.valkey_exec:
+        command: ACL_GETUSER
+        params:
+          username: test_user
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.result['commands'] == ['+get', '+set']
+
+    - name: Create test user one existing command - idempotency
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        commands:
+          - +set
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == False
+
+    - name: Create test user another one existing command - idempotency
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        commands:
+          - +get
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == False
+
+    - name: Create test user with both commands - idempotency
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        commands:
+          - +get
+          - +set
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == False
+
+    - name: Create test user with both commands change order  - idempotency
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        commands:
+          - +set
+          - +get
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == False
+
+    - name: Create test user with both commands change order  - idempotency
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        commands:
+          - +set
+          - +get
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == False
+
+    - name: Revoke single command
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        commands:
+          - -set
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == True
+
+    - name: Check user actual commands
+      rkozlo.valkey.valkey_exec:
+        command: ACL_GETUSER
+        params:
+          username: test_user
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.result['commands'] == ['+get', '-set']
+
+    - name: Revoke single command - idempotency
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        commands:
+          - -set
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == False
+
+    - name: Reset commands using commands - workaround
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        categories:
+          - -@all
+          - -@read
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == True
+
+    - name: Check user actual commands
+      rkozlo.valkey.valkey_exec:
+        command: ACL_GETUSER
+        params:
+          username: test_user
+      register: result
+
+    - name: Create user with invalid commands
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        commands:
+          - set
+      register: result
+      ignore_errors: true
+
+    - name: Check ret values
+      ansible.builtin.assert:
+        that:
+        - result is failed
+
+    - name: Drop test user
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: absent
+
+- name: Iterate over test cases
+  vars:
+    _test_case: "{{ item }}"
+  ansible.builtin.include_tasks: test_sequence.yml
+  loop: "{{ test_cases }}"
