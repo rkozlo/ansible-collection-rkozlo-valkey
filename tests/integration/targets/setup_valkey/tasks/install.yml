@@ -1,0 +1,19 @@
+- name: Download Valkey
+  ansible.builtin.get_url:
+    url: https://download.valkey.io/releases/valkey-{{ valkey_version }}-noble-x86_64.tar.gz
+    dest: /tmp/valkey-{{ valkey_version }}.tar.gz
+
+- name: Extract
+  ansible.builtin.unarchive:
+    src: /tmp/valkey-{{ valkey_version }}.tar.gz
+    dest: /usr/local
+    remote_src: true
+    extra_opts: [--strip-components=1]
+
+- name: Start server
+  ansible.builtin.command: valkey-server --daemonize yes
+
+- name: Install Python driver
+  ansible.builtin.pip:
+    name: valkey
+    state: present

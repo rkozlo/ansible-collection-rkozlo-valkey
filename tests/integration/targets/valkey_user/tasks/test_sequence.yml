@@ -1,0 +1,212 @@
+---
+- name: Create user {{ _test_case.name }}
+  rkozlo.valkey.valkey_user:
+    name: "{{ _test_case.name }}"
+    enabled: "{{ _test_case.enable | default(omit) }}"
+    passwords: "{{ _test_case.passwords | default(omit) }}"
+    hashed_passwords: "{{ _test_case.hashed_passwords | default(omit) }}"
+    commands: "{{ _test_case.commands | default(omit) }}"
+    key_patterns: "{{ _test_case.key_patterns | default(omit) }}"
+    channels: "{{ _test_case.channels | default(omit) }}"
+    categories: "{{ _test_case.categories | default(omit) }}"
+    reset_passwords: "{{ _test_case.reset_passwords | default(omit) }}"
+    reset_key_patterns: "{{ _test_case.reset_key_patterns | default(omit) }}"
+    reset_chanells: "{{ _test_case.reset_chanells | default(omit) }}"
+  register: result
+
+- name: Check the return values {{ _test_case.name }}
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.executed_statements[0] == _test_case.__expected_query
+
+- name: Create user {{ _test_case.name }} - idempotency
+  rkozlo.valkey.valkey_user:
+    name: "{{ _test_case.name | default(omit) }}"
+    enabled: "{{ _test_case.enable | default(omit) }}"
+    passwords: "{{ _test_case.passwords | default(omit) }}"
+    hashed_passwords: "{{ _test_case.hashed_passwords | default(omit) }}"
+    commands: "{{ _test_case.commands | default(omit) }}"
+    key_patterns: "{{ _test_case.key_patterns | default(omit) }}"
+    channels: "{{ _test_case.channels | default(omit) }}"
+    categories: "{{ _test_case.categories | default(omit) }}"
+    reset_passwords: "{{ _test_case.reset_passwords | default(omit) }}"
+    reset_key_patterns: "{{ _test_case.reset_key_patterns | default(omit) }}"
+    reset_chanells: "{{ _test_case.reset_chanells | default(omit) }}"
+  register: result
+
+- name: Check the return values {{ _test_case.name }}
+  ansible.builtin.assert:
+    that:
+      - result.changed == False
+      - result.executed_statements == []
+
+- name: Delete user {{ _test_case.name }}
+  rkozlo.valkey.valkey_user:
+    name: "{{ _test_case.name | default(omit) }}"
+    state: absent
+  register: result
+
+- name: Check the return values {{ _test_case.name }}
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.executed_statements[0] == _test_case.__expected_drop
+
+- name: Delete user {{ _test_case.name }} - idempotency
+  rkozlo.valkey.valkey_user:
+    name: "{{ _test_case.name | default(omit) }}"
+    state: absent
+  register: result
+
+- name: Check the return values {{ _test_case.name }}
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.executed_statements == []
+
+### Test passwords
+- name: Test password differs
+  when: _test_case.passwords is defined
+  block:
+    - name: Create user passwords differs {{ _test_case.name }}
+      rkozlo.valkey.valkey_user:
+        name: "{{ _test_case.name | default(omit) }}"
+        enabled: "{{ _test_case.enable | default(omit) }}"
+        passwords: ['dummy_password']
+        hashed_passwords: "{{ _test_case.hashed_passwords | default(omit) }}"
+        commands: "{{ _test_case.commands | default(omit) }}"
+        key_patterns: "{{ _test_case.key_patterns | default(omit) }}"
+        channels: "{{ _test_case.channels | default(omit) }}"
+        categories: "{{ _test_case.categories | default(omit) }}"
+        reset_passwords: "{{ _test_case.reset_passwords | default(omit) }}"
+        reset_key_patterns: "{{ _test_case.reset_key_patterns | default(omit) }}"
+        reset_chanells: "{{ _test_case.reset_chanells | default(omit) }}"
+      register: result
+
+    - name: Include tasks for command run {{ _test_case.name }}
+      include_tasks: command_run.yml
+      vars:
+        _scenario_name: password differs
+
+### Test hashed passwords
+- name: Test hashed passwords differs
+  when: _test_case.hashed_passwords is defined
+  block:
+    - name: Create user hashed passwords differs {{ _test_case.name }}
+      rkozlo.valkey.valkey_user:
+        name: "{{ _test_case.name | default(omit) }}"
+        enabled: "{{ _test_case.enable | default(omit) }}"
+        passwords: "{{ _test_case.passwords | default(omit) }}"
+        hashed_passwords: ['146512fc46367d414ad21a0e1efc8bbd798a975f12b8384510f2d1ad5d8c299c']
+        commands: "{{ _test_case.commands | default(omit) }}"
+        key_patterns: "{{ _test_case.key_patterns | default(omit) }}"
+        channels: "{{ _test_case.channels | default(omit) }}"
+        categories: "{{ _test_case.categories | default(omit) }}"
+        reset_passwords: "{{ _test_case.reset_passwords | default(omit) }}"
+        reset_key_patterns: "{{ _test_case.reset_key_patterns | default(omit) }}"
+        reset_chanells: "{{ _test_case.reset_chanells | default(omit) }}"
+      register: result
+
+    - name: Include tasks for command run {{ _test_case.name }}
+      include_tasks: command_run.yml
+      vars:
+        _scenario_name: hashed password differs
+
+### Test commands differs.
+- name: Test commands differs
+  when: _test_case.commands is defined
+  block:
+    - name: Create user commands differs {{ _test_case.name }}
+      rkozlo.valkey.valkey_user:
+        name: "{{ _test_case.name | default(omit) }}"
+        enabled: "{{ _test_case.enable | default(omit) }}"
+        passwords: "{{ _test_case.passwords | default(omit) }}"
+        hashed_passwords: "{{ _test_case.hashed_passwords | default(omit) }}"
+        commands: ['+slaveof']
+        key_patterns: "{{ _test_case.key_patterns | default(omit) }}"
+        channels: "{{ _test_case.channels | default(omit) }}"
+        categories: "{{ _test_case.categories | default(omit) }}"
+        reset_passwords: "{{ _test_case.reset_passwords | default(omit) }}"
+        reset_key_patterns: "{{ _test_case.reset_key_patterns | default(omit) }}"
+        reset_chanells: "{{ _test_case.reset_chanells | default(omit) }}"
+      register: result
+
+    - name: Include tasks for command run {{ _test_case.name }}
+      include_tasks: command_run.yml
+      vars:
+        _scenario_name: commands differs
+
+### Test key_patterns differs.
+- name: Test key_patterns differs
+  when: _test_case.key_patterns is defined
+  block:
+    - name: Create user key_patterns differs {{ _test_case.name }}
+      rkozlo.valkey.valkey_user:
+        name: "{{ _test_case.name | default(omit) }}"
+        enabled: "{{ _test_case.enable | default(omit) }}"
+        passwords: "{{ _test_case.passwords | default(omit) }}"
+        hashed_passwords: "{{ _test_case.hashed_passwords | default(omit) }}"
+        commands: "{{ _test_case.commands | default(omit) }}"
+        key_patterns: ['dummy*']
+        channels: "{{ _test_case.channels | default(omit) }}"
+        categories: "{{ _test_case.categories | default(omit) }}"
+        reset_passwords: "{{ _test_case.reset_passwords | default(omit) }}"
+        reset_key_patterns: "{{ _test_case.reset_key_patterns | default(omit) }}"
+        reset_chanells: "{{ _test_case.reset_chanells | default(omit) }}"
+      register: result
+
+    - name: Include tasks for command run {{ _test_case.name }}
+      include_tasks: command_run.yml
+      vars:
+        _scenario_name: key_patterns differs
+
+### Test channels differs.
+- name: Test channels differs
+  when: _test_case.channels is defined
+  block:
+    - name: Create user channels differs {{ _test_case.name }}
+      rkozlo.valkey.valkey_user:
+        name: "{{ _test_case.name | default(omit) }}"
+        enabled: "{{ _test_case.enable | default(omit) }}"
+        passwords: "{{ _test_case.passwords | default(omit) }}"
+        hashed_passwords: "{{ _test_case.hashed_passwords | default(omit) }}"
+        commands: "{{ _test_case.commands | default(omit) }}"
+        key_patterns: "{{ _test_case.key_patterns | default(omit) }}"
+        channels: ['pub']
+        categories: "{{ _test_case.categories | default(omit) }}"
+        reset_passwords: "{{ _test_case.reset_passwords | default(omit) }}"
+        reset_key_patterns: "{{ _test_case.reset_key_patterns | default(omit) }}"
+        reset_chanells: "{{ _test_case.reset_chanells | default(omit) }}"
+      register: result
+
+    - name: Include tasks for command run {{ _test_case.name }}
+      include_tasks: command_run.yml
+      vars:
+        _scenario_name: channels differs
+
+### Test categories differs.
+- name: Test categories differs
+  when:
+  - _test_case.categories is defined
+  - _test_case.reset_categories | default(true) == true
+  block:
+    - name: Create user categories differs {{ _test_case.name }}
+      rkozlo.valkey.valkey_user:
+        name: "{{ _test_case.name | default(omit) }}"
+        enabled: "{{ _test_case.enable | default(omit) }}"
+        passwords: "{{ _test_case.passwords | default(omit) }}"
+        hashed_passwords: "{{ _test_case.hashed_passwords | default(omit) }}"
+        commands: "{{ _test_case.commands | default(omit) }}"
+        key_patterns: "{{ _test_case.key_patterns | default(omit) }}"
+        channels: "{{ _test_case.channels | default(omit) }}"
+        categories: ['+@connection']
+        reset_passwords: "{{ _test_case.reset_passwords | default(omit) }}"
+        reset_key_patterns: "{{ _test_case.reset_key_patterns | default(omit) }}"
+        reset_chanells: "{{ _test_case.reset_chanells | default(omit) }}"
+      register: result
+
+    - name: Include tasks for command run {{ _test_case.name }}
+      include_tasks: command_run.yml
+      vars:
+        _scenario_name: categories differs

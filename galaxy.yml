@@ -1,0 +1,35 @@
+---
+namespace: rkozlo
+name: valkey
+version: 0.1.0
+readme: README.md
+authors:
+  - Rafał Kozłowski <rafalkozlowski07@gmail.com>
+    
+description: Ansible collection for Valkey for managing Valkey users and executing raw commands.
+license_file: LICENSE
+tags:
+  - database
+  - valkey
+
+license: 
+ - GPL-3.0-or-later
+dependencies: {}
+repository: "https://github.com/rkozlo/ansible-collection-rkozlo-valkey"
+homepage: "https://github.com/rkozlo/ansible-collection-rkozlo-valkey"
+issues: "https://github.com/rkozlo/ansible-collection-rkozlo-valkey/issues"
+manifest:
+  directives:
+    - include galaxy.yml
+    - include README.md
+    - include LICENSE
+    - include requirements.txt
+    - include meta/*.yml
+    - recursive-include plugins/modules *.py
+    - recursive-include plugins/module_utils *.py
+    - recursive-include plugins/doc_fragments *.py
+    - recursive-include tests/unit **
+    - recursive-include tests/integration **
+
+    - recursive-exclude tests/output **
+    - global-exclude /.* /__pycache__

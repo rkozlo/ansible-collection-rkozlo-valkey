@@ -1,0 +1,106 @@
+name: Plugins CI
+on:
+  push:
+    paths:
+      - 'plugins/**'
+      - 'tests/**'
+      - '.github/workflows/ansible-test-plugins.yml'
+  pull_request:
+    paths:
+      - 'plugins/**'
+      - 'tests/**'
+      - '.github/workflows/ansible-test-plugins.yml'
+
+jobs:
+  sanity:
+    name: "Sanity (Ansible: ${{ matrix.ansible }})"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ansible:
+          - stable-2.17
+          - stable-2.18
+          - stable-2.19
+          - stable-2.20
+          - devel
+    steps:
+
+      - name: Check out code
+        uses: actions/checkout@v6
+        with:
+          path: ansible_collections/rkozlo/valkey
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install ansible-base (${{ matrix.ansible }})
+        run: pip install https://github.com/ansible/ansible/archive/${{ matrix.ansible }}.tar.gz --disable-pip-version-check
+
+      - name: Run sanity tests
+        run: ansible-test sanity --docker -v --color
+        working-directory: ./ansible_collections/rkozlo/valkey
+
+  units:
+    runs-on: ubuntu-latest
+    name: Units (Ⓐ${{ matrix.ansible }})
+    strategy:
+      fail-fast: true
+      matrix:
+        ansible:
+          - stable-2.17
+          - stable-2.18
+          - stable-2.19
+          - stable-2.20
+          - devel
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+        with:
+          path: ./ansible_collections/rkozlo/valkey
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install ansible-base (${{ matrix.ansible }})
+        run: pip install https://github.com/ansible/ansible/archive/${{ matrix.ansible }}.tar.gz --disable-pip-version-check
+
+      - name: Instal valkey
+        run: pip install valkey
+
+      - name: Run unit test
+        run: ansible-test units -v --color --python 3.10 --docker --coverage
+        working-directory: ./ansible_collections/rkozlo/valkey
+
+      - name: Generate coverage report
+        run: ansible-test coverage xml -v --requirements --group-by command --group-by version
+        working-directory: ./ansible_collections/rkozlo/valkey
+
+      - uses: codecov/codecov-action@v6
+        with:
+          fail_ci_if_error: false
+  integration:
+    runs-on: ubuntu-latest
+    name: "valkey=${{ matrix.valkey_version }} ansible=${{ matrix.ansible }}"
+
+    strategy:
+      fail-fast: false
+      matrix:
+        ansible:
+          - stable-2.18
+          - stable-2.19
+          - stable-2.20
+        valkey_version:
+          - "8.1.7"
+          - "9.0.4"
+    steps:
+      - name: Run integration tests
+        uses: ansible-community/ansible-test-gh-action@release/v1
+        with:
+          ansible-core-version: ${{ matrix.ansible}}
+          testing-type: integration
+          coverage: never
