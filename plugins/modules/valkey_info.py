@@ -70,12 +70,13 @@ info:
   type: dict
   returned: always
   example:
-    valkey_version: "9.0.0"
-    valkey_mode: "standalone"
-    process_id: 1234
-    uptime_in_seconds: 3600
-    connected_clients: 10
-    used_memory: 1024000
+    info:
+      valkey_version: "9.0.0"
+      valkey_mode: "standalone"
+      process_id: 1234
+      uptime_in_seconds: 3600
+      connected_clients: 10
+      used_memory: 1024000
 '''
 
 from ansible.module_utils.basic import AnsibleModule

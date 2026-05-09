@@ -26,7 +26,3 @@ def get_main_conn_kwargs(module):
     if module.params['login_password']:
         main_conn_kwargs['password'] = module.params['login_password']
     return main_conn_kwargs
-
-
-def format_params_to_string(input):
-    return ' '.join([f"{k}={v}" for k, v in input.items()])
