@@ -18,7 +18,18 @@ dependencies: {}
 repository: "https://github.com/rkozlo/ansible-collection-rkozlo-valkey"
 homepage: "https://github.com/rkozlo/ansible-collection-rkozlo-valkey"
 issues: "https://github.com/rkozlo/ansible-collection-rkozlo-valkey/issues"
-build_ignore:
-# https://docs.ansible.com/projects/ansible/devel/dev_guide/developing_collections_distributing.html#ignoring-files-and-folders
-  - .gitignore
-  - changelogs/.plugin-cache.yaml
+manifest:
+  directives:
+    - include galaxy.yml
+    - include README.md
+    - include LICENSE
+    - include requirements.txt
+    - include meta/*.yml
+    - recursive-include plugins/modules *.py
+    - recursive-include plugins/module_utils *.py
+    - recursive-include plugins/doc_fragments *.py
+    - recursive-include tests/unit **
+    - recursive-include tests/integration **
+
+    - recursive-exclude tests/output **
+    - global-exclude /.* /__pycache__
