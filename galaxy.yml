@@ -7,7 +7,6 @@ authors:
   - Rafał Kozłowski <rafalkozlowski07@gmail.com>
     
 description: Ansible collection for Valkey for managing Valkey users and executing raw commands.
-license_file: LICENSE
 tags:
   - database
   - valkey
