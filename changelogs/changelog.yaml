@@ -1,0 +1,9 @@
+ancestor: null
+releases:
+  0.1.0:
+    changes:
+      minor_changes:
+      - valkey_user - add the module.
+      - valkey_exec - add the module.
+      - valkey_info - add the module.
+      release_summary: This is the first release of the rkozlo.valkey collection.
