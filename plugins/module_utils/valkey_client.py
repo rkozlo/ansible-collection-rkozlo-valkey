@@ -22,10 +22,26 @@ class ValkeyClient:
         self.client = None
         self.client_kwargs = client_kwargs
         self._version = None
+        self._aclsave_supported = None
 
         self.client_kwargs.setdefault('socket_connect_timeout', 5)
         self.client_kwargs.setdefault('socket_timeout', 5)
         self.client_kwargs.setdefault('decode_responses', True)
+
+    @property
+    def version(self):
+        if self._version is None:
+            info = self._execute('info', 'server')
+            self._version = info.get('valkey_version')
+        return self._version
+
+    @property
+    def aclsave_supported(self):
+        if self._aclsave_supported is None:
+            result = self._execute('config_get', args=['aclfile'])
+
+            self._aclsave_supported = True if result.get('aclfile', '') else False
+        return self._aclsave_supported
 
     def _connect(self):
         if not self.client:
@@ -56,10 +72,3 @@ class ValkeyClient:
             self.module.fail_json(msg=f"Error executing command '{cmd_name}': {to_native(e)}")
         except AttributeError as e:
             self.module.fail_json(msg=f"Command '{cmd_name}' not supported by this Valkey version: {to_native(e)}")
-
-    @property
-    def version(self):
-        if self._version is None:
-            info = self._execute('info', 'server')
-            self._version = info.get('valkey_version')
-        return self._version

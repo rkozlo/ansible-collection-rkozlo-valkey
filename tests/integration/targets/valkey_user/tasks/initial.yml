@@ -63,7 +63,7 @@
   ansible.builtin.assert:
     that:
       - result.changed == True
-      - result.executed_statements | length == 1
+      - result.executed_statements | length == 2
       - >-
         result.executed_statements[0].params == {
           'username': 'test_user',
@@ -72,6 +72,7 @@
           'reset_keys': False,
           'reset_channels': False
         }
+      - result.executed_statements[1].action == 'acl_save'
 
 - name: Check user is not created
   rkozlo.valkey.valkey_exec:
@@ -94,7 +95,7 @@
   ansible.builtin.assert:
     that:
       - result.changed == True
-      - result.executed_statements | length == 1
+      - result.executed_statements | length == 2
       - result.executed_statements[0].action == 'create_user'
       - >-
         result.executed_statements[0].params == {
@@ -104,6 +105,7 @@
           'reset_keys': False,
           'reset_channels': False
         }
+      - result.executed_statements[1].action == 'acl_save'
 
 - name: Check user is created
   rkozlo.valkey.valkey_exec:
@@ -145,7 +147,7 @@
   ansible.builtin.assert:
     that:
       - result.changed == True
-      - result.executed_statements | length == 1
+      - result.executed_statements | length == 2
       - result.executed_statements[0].action == 'update_user'
       - >-
         result.executed_statements[0].params == {
@@ -156,6 +158,7 @@
           'reset_keys': False,
           'reset_channels': False
         }
+      - result.executed_statements[1].action == 'acl_save'
 
 - name: Check user is not altered
   rkozlo.valkey.valkey_exec:
@@ -203,7 +206,7 @@
   ansible.builtin.assert:
     that:
       - result.changed == True
-      - result.executed_statements | length == 1
+      - result.executed_statements | length == 2
       - result.executed_statements[0].action == 'update_user'
       - >-
         result.executed_statements[0].params == {
@@ -214,6 +217,7 @@
           'reset_keys': False,
           'reset_channels': False
         }
+      - result.executed_statements[1].action == 'acl_save'
 
 - name: Check user is altered
   rkozlo.valkey.valkey_exec:
@@ -249,7 +253,7 @@
   ansible.builtin.assert:
     that:
       - result.changed == True
-      - result.executed_statements | length == 1
+      - result.executed_statements | length == 2
       - result.executed_statements[0].action == 'update_user'
       - >-
         result.executed_statements[0].params == {
@@ -261,6 +265,7 @@
           'reset_channels': False
         }
       - result.changed == True
+      - result.executed_statements[1].action == 'acl_save'
 
 - name: Alter test user no password no reset 
   rkozlo.valkey.valkey_user:
@@ -296,7 +301,7 @@
   ansible.builtin.assert:
     that:
       - result.changed == True
-      - result.executed_statements | length == 1
+      - result.executed_statements | length == 2
       - result.executed_statements[0].action == 'update_user'
       - >-
         result.executed_statements[0].params == {
@@ -307,6 +312,7 @@
           'reset_keys': False,
           'reset_channels': False
         }
+      - result.executed_statements[1].action == 'acl_save'
 
 - name: Check user is altered
   rkozlo.valkey.valkey_exec:
@@ -336,6 +342,9 @@
           {
             "action": "delete_user",
             "args": ["test_user"]
+          },
+          {
+            "action": "acl_save"
           }
         ]
 
@@ -366,6 +375,9 @@
           {
             "action": "delete_user",
             "args": ["test_user"]
+          },
+          {
+            "action": "acl_save"
           }
         ]
 
@@ -392,6 +404,11 @@
     that:
       - result.changed == False
       - result.executed_statements == []
+
+# - name: Create test user without save_acls in check mode
+#   rkozlo.valkey.valkey_user:
+#     name: test_user
+#     state: present
 
 - name: Test passwords
   block:

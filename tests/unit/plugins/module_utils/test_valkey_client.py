@@ -41,3 +41,19 @@ def test_valkey_client_version_caching(valkey_client, mocker):
 
     assert version == '9.0.0'
     valkey_client._execute.assert_called_once_with('info', 'server')
+
+
+def test_acl_save_not_supported(valkey_client, mocker):
+    mocker.patch.object(valkey_client, '_execute', return_value={'aclfile': ''})
+
+    assert valkey_client.aclsave_supported is False
+    valkey_client.aclsave_supported
+    valkey_client._execute.assert_called_once()
+
+
+def test_acl_save_supported(valkey_client, mocker):
+    mocker.patch.object(valkey_client, '_execute', return_value={'aclfile': '/valkey.acl'})
+
+    assert valkey_client.aclsave_supported is True
+    valkey_client.aclsave_supported
+    valkey_client._execute.assert_called_once()

@@ -13,9 +13,29 @@ def valkey_user(mocker):
     mock_module.check_mode = False
     mock_client = mocker.MagicMock()
 
-    # if not find_spec("valkey"):
-    #     pytest.skip("valkey Python package is not installed")
     return ValkeyUser(module=mock_module, client=mock_client, name='test_user')
+
+
+@pytest.mark.parametrize("aclsave_supported,save_acl", [
+    ([True, True]),
+    ([True, False]),
+    ([False, False])
+])
+def test_check_save_acls_success(valkey_user, aclsave_supported, save_acl):
+    valkey_user.client.aclsave_supported = aclsave_supported
+    valkey_user._check_save_acls(save_acl)
+
+    valkey_user.module.fail_json.assert_not_called()
+
+
+@pytest.mark.parametrize("aclsave_supported,save_acl", [
+    ([False, True])
+])
+def test_check_save_acls_failure(valkey_user, aclsave_supported, save_acl):
+    valkey_user.client.aclsave_supported = aclsave_supported
+    valkey_user._check_save_acls(save_acl)
+
+    valkey_user.module.fail_json.assert_called_once()
 
 
 @pytest.mark.parametrize("passwords,hashed_passwords,expected_pass,expected_hash", [

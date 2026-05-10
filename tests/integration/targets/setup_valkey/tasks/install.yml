@@ -10,8 +10,14 @@
     remote_src: true
     extra_opts: [--strip-components=1]
 
+- name: Create acl file for valkey
+  ansible.builtin.file:
+    path: /valkey.acl
+    state: touch
+    mode: 600
+
 - name: Start server
-  ansible.builtin.command: valkey-server --daemonize yes
+  ansible.builtin.command: valkey-server --aclfile /valkey.acl --daemonize yes
 
 - name: Install Python driver
   ansible.builtin.pip:
