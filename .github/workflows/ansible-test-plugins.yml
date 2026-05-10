@@ -95,6 +95,8 @@ jobs:
           - stable-2.19
           - stable-2.20
         valkey_version:
+          - "7.2.13"
+          - "8.0.9"
           - "8.1.7"
           - "9.0.4"
     steps:
