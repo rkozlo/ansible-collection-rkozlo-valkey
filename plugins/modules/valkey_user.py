@@ -121,6 +121,13 @@ options:
       - When I(true) still will be idempotent if existing channels are equal to O(channels).
     type: bool
     default: false
+  save_acls:
+    description:
+      - Whether execute ACL SAVE after user changes.
+      - Save acl only works if aclfile is properly configured.
+    type: bool
+    default: true
+    version_added: 0.2.0
 '''
 
 EXAMPLES = r'''
@@ -483,6 +490,14 @@ class ValkeyUser:
         # Normal case: check if desired is already fully present
         return not set(desired).issubset(current)
 
+    def _check_save_acls(self, save_acls):
+        if not save_acls:
+            return "a"
+        if self.client.aclsave_supported:
+            return "b"
+        else:
+            self.module.fail_json(msg="Acl save not supported on server. Configure aclfile.")
+
     def _normalize_categories(self, categories):
         available_categories = self._get_available_categories()
         if not categories:
@@ -534,8 +549,10 @@ class ValkeyUser:
             return True
         return False
 
-    def create(self, enabled=True, passwords=None, hashed_passwords=None, commands=None,
-               key_patterns=None, channels=None, categories=None):
+    def create(self, enabled, passwords, hashed_passwords, commands,
+               key_patterns, channels, categories, save_acls):
+        # Early fail if server doesn't support.
+        self._check_save_acls
 
         target_passwords, target_hashes = self._extract_passwords(passwords, hashed_passwords)
         categories = self._normalize_categories(categories)
@@ -547,14 +564,19 @@ class ValkeyUser:
             'action': 'create_user',
             'params': params
         })
+        if save_acls:
+            executed_statements.append({'action': 'acl_save'})
         if not self.module.check_mode:
             self.client._execute('acl_setuser', **params)
+            self.client._execute('acl_save')
 
         return True
 
-    def update(self, enabled=None, passwords=None, hashed_passwords=None, commands=None,
-               key_patterns=None, channels=None, categories=None, reset_passwords=False,
-               reset_key_patterns=False, reset_channels=False):
+    def update(self, enabled, passwords, hashed_passwords, commands,
+               key_patterns, channels, categories, reset_passwords,
+               reset_key_patterns, reset_channels, save_acls):
+        # Early fail if server doesn't support.
+        self._check_save_acls
 
         target_passwords, target_hashes = self._extract_passwords(passwords, hashed_passwords)
         categories = self._normalize_categories(categories)
@@ -572,19 +594,30 @@ class ValkeyUser:
             'action': 'update_user',
             'params': params
         })
+        if save_acls:
+            executed_statements.append({'action': 'acl_save'})
         if not self.module.check_mode:
             self.client._execute('acl_setuser', **params)
+            if save_acls:
+                self.client._execute('acl_save')
 
         return True
 
-    def delete(self):
+    def delete(self, save_acls):
+        # Early fail if server doesn't support.
+        self._check_save_acls
+
         args = [self.name]
         executed_statements.append({
             'action': 'delete_user',
             'args': args
         })
+        if save_acls:
+            executed_statements.append({'action': 'acl_save'})
         if not self.module.check_mode:
             self.client._execute('acl_deluser', *args)
+            if save_acls:
+                self.client._execute('acl_save')
 
         return True
 
@@ -601,6 +634,7 @@ def main():
         key_patterns=dict(type='list', elements='str', required=False, default=None, no_log=False),
         channels=dict(type='list', elements='str', required=False, default=None),
         categories=dict(type='list', elements='str'),
+        save_acls=dict(type='bool', default=True),
         reset_passwords=dict(type='bool', default=False),
         reset_key_patterns=dict(type='bool', default=False),
         reset_channels=dict(type='bool', default=False)
@@ -624,6 +658,7 @@ def main():
     key_patterns = module.params['key_patterns']
     channels = module.params['channels']
     categories = module.params['categories']
+    save_acls = module.params['save_acls']
     reset_passwords = module.params['reset_passwords']
     reset_key_patterns = module.params['reset_key_patterns']
     reset_channels = module.params['reset_channels']
@@ -633,14 +668,14 @@ def main():
     if state == 'present':
         if not valkey_user.exists:
             changed = valkey_user.create(enabled=enabled, passwords=passwords, hashed_passwords=hashed_passwords, commands=commands,
-                                         key_patterns=key_patterns, channels=channels, categories=categories)
+                                         key_patterns=key_patterns, channels=channels, categories=categories, save_acls=save_acls)
         else:
             changed = valkey_user.update(enabled=enabled, passwords=passwords, hashed_passwords=hashed_passwords, commands=commands,
                                          key_patterns=key_patterns, channels=channels, categories=categories, reset_passwords=reset_passwords,
-                                         reset_channels=reset_channels, reset_key_patterns=reset_key_patterns)
+                                         reset_channels=reset_channels, reset_key_patterns=reset_key_patterns, save_acls=save_acls)
     else:
         if valkey_user.exists:
-            changed = valkey_user.delete()
+            changed = valkey_user.delete(save_acls=save_acls)
 
     module.exit_json(changed=changed, executed_statements=executed_statements)
 
