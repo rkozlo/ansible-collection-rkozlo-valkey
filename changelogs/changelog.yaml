@@ -3,7 +3,16 @@ releases:
   0.1.0:
     changes:
       minor_changes:
-      - valkey_user - add the module.
       - valkey_exec - add the module.
       - valkey_info - add the module.
+      - valkey_user - add the module.
       release_summary: This is the first release of the rkozlo.valkey collection.
+      release_date: '2026-05-09'
+  0.2.0:
+    changes:
+      minor_changes:
+      - valkey_user - add option save_acls and enable this as default.
+    release_summary: Change default behaviour for valkey_user. Now it will save acls if not explicitiy disabled.
+    fragments:
+    - save-acls-option.yaml
+    release_date: '2026-05-10'
