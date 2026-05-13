@@ -18,7 +18,6 @@ options:
   login_db:
     description: Database number
     type: int
-    default: 0
   login_user:
     description: Username for authentication
     type: str
@@ -30,6 +29,11 @@ options:
     description: Additional keyword arguments to pass to the Valkey client
     type: dict
     default: {}
+  cluster:
+    description: Wheter connect in cluster mode or not. Currently only passing one host is supported.
+    type: bool
+    default: false
+    version_added: 0.3.0
 
 requirements:
   - valkey

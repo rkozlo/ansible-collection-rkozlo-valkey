@@ -2,6 +2,7 @@ from ansible.module_utils.common.text.converters import to_native
 
 try:
     from valkey import Valkey
+    from valkey.cluster import ValkeyCluster
     import valkey.exceptions
     HAS_VALKEY_PACKAGE = True
 except ImportError:
@@ -11,7 +12,7 @@ except ImportError:
 
 
 class ValkeyClient:
-    def __init__(self, module=None, host='localhost', port=6379, username='default', password=None, **client_kwargs):
+    def __init__(self, module=None, cluster=False, host='localhost', port=6379, username='default', password=None, **client_kwargs):
         if not HAS_VALKEY_PACKAGE:
             module.fail_json(msg="valkey Python package is required. Install with: pip install valkey")
         self.module = module
@@ -21,6 +22,7 @@ class ValkeyClient:
         self.login_password = password
         self.client = None
         self.client_kwargs = client_kwargs
+        self.cluster = cluster
         self._version = None
         self._aclsave_supported = None
 
@@ -46,13 +48,22 @@ class ValkeyClient:
     def _connect(self):
         if not self.client:
             try:
-                self.client = Valkey(
-                    host=self.login_host,
-                    port=self.login_port,
-                    username=self.login_username,
-                    password=self.login_password,
-                    **self.client_kwargs
-                )
+                if self.cluster:
+                    self.client = ValkeyCluster(
+                        host=self.login_host,
+                        port=self.login_port,
+                        username=self.login_username,
+                        password=self.login_password,
+                        **self.client_kwargs
+                    )
+                else:
+                    self.client = Valkey(
+                        host=self.login_host,
+                        port=self.login_port,
+                        username=self.login_username,
+                        password=self.login_password,
+                        **self.client_kwargs
+                    )
                 self.client.ping()
             except valkey.exceptions.ConnectionError as e:
                 self.module.fail_json(

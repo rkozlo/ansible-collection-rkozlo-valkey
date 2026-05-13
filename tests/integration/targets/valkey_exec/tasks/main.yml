@@ -1,0 +1,38 @@
+# TODO For testing with cluster initialization.
+# Libary require initialized cluster at this moment so separate install tasks here.
+- name: Download Valkey
+  ansible.builtin.get_url:
+    url: https://download.valkey.io/releases/valkey-{{ valkey_version }}-noble-x86_64.tar.gz
+    dest: /tmp/valkey-{{ valkey_version }}.tar.gz
+
+- name: Extract
+  ansible.builtin.unarchive:
+    src: /tmp/valkey-{{ valkey_version }}.tar.gz
+    dest: /usr/local
+    remote_src: true
+    extra_opts: [--strip-components=1]
+
+- name: Create acl file for valkey
+  ansible.builtin.file:
+    path: /valkey.acl
+    state: touch
+    mode: 600
+
+- name: Start server 1
+  ansible.builtin.command: valkey-server --cluster-config-file /tmp/1.conf --cluster-enabled yes --daemonize yes --port 6378
+
+- name: Start server 2
+  ansible.builtin.command: valkey-server --cluster-config-file /tmp/2.conf --cluster-enabled yes --daemonize yes --port 6380
+
+- name: Start server 3
+  ansible.builtin.command: valkey-server --cluster-config-file /tmp/3.conf --cluster-enabled yes --daemonize yes --port 6381
+
+- name: Create cluster
+  ansible.builtin.command: valkey-cli -p 6378 --cluster create 127.0.0.1:6378 127.0.0.1:6380 127.0.0.1:6381 --cluster-replicas 0 --cluster-yes
+
+- name: Install Python driver
+  ansible.builtin.pip:
+    name: valkey
+    state: present
+
+- import_tasks: initial.yml

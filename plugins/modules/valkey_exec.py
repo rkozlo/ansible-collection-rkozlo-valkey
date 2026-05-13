@@ -100,7 +100,7 @@ executed_statements:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.rkozlo.valkey.plugins.module_utils.valkey import get_client_common_argument_spec, get_main_conn_kwargs
+from ansible_collections.rkozlo.valkey.plugins.module_utils.valkey import get_client_common_argument_spec, get_main_conn_kwargs, _make_serializable
 from ansible_collections.rkozlo.valkey.plugins.module_utils.valkey_client import ValkeyClient
 
 executed_statements = []
@@ -140,7 +140,9 @@ def main():
     conn_kwargs = get_main_conn_kwargs(module)
     client_kwargs = module.params.get('client_kwargs', {})
     conn_kwargs.update(client_kwargs)
-    client = ValkeyClient(module, **conn_kwargs)
+    cluster = module.params['cluster']
+
+    client = ValkeyClient(module, cluster, **conn_kwargs)
 
     command = module.params['command']
     args = module.params.get('args', [])
@@ -149,7 +151,7 @@ def main():
     valkey_raw_command = ValkeyExec(module, client, command, args, params)
 
     result = valkey_raw_command.execute()
-
+    result = _make_serializable(result)
     module.exit_json(changed=True, result=result, executed_statements=executed_statements)
 
 

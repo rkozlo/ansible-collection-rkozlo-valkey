@@ -109,7 +109,9 @@ def main():
     conn_kwargs = get_main_conn_kwargs(module)
     client_kwargs = module.params.get('client_kwargs', {})
     conn_kwargs.update(client_kwargs)
-    client = ValkeyClient(module, **conn_kwargs)
+    cluster = module.params['cluster']
+
+    client = ValkeyClient(module, cluster, **conn_kwargs)
 
     sections = module.params['sections']
     valkey_info_module = ValkeyInfoModule(module, client, sections=sections)
