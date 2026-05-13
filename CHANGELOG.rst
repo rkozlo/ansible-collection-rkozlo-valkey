@@ -1,8 +1,16 @@
-===========================
-Rkozlo.Valkey Release Notes
-===========================
+========================================================
+Ansible rkozlo.valkey collection changelog Release Notes
+========================================================
 
 .. contents:: Topics
+
+v0.3.0
+======
+
+Minor Changes
+-------------
+
+- Add cluster option to enable cluster mode. It will allow execute cluster_* methods with valkey_exec.
 
 v0.2.0
 ======

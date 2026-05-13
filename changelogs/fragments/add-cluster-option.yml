@@ -1,2 +1,0 @@
-minor_changes:
-  - Add cluster option to enable cluster mode. It will allow execute cluster_* methods with valkey_exec.
