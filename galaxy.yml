@@ -1,7 +1,7 @@
 ---
 namespace: rkozlo
 name: valkey
-version: 0.3.0
+version: 0.3.1
 readme: README.md
 authors:
   - Rafał Kozłowski <rafalkozlowski07@gmail.com>
@@ -24,6 +24,8 @@ manifest:
     - include LICENSE
     - include requirements.txt
     - include meta/*.yml
+    - include meta/ee-bindep.txt
+    - include meta/ee-requirements.txt
     - recursive-include plugins/modules *.py
     - recursive-include plugins/module_utils *.py
     - recursive-include plugins/doc_fragments *.py

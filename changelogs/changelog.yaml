@@ -20,7 +20,16 @@ releases:
       - Add cluster option to enable cluster mode. It will allow execute cluster_*
         methods with valkey_exec.
       - Option login_db required false from now.
-      release_summary: Introduce first version of cluster option. Basic cluster commands are supported now.
+      release_summary: Introduce first version of cluster option. Basic cluster commands
+        are supported now.
     fragments:
     - add-cluster-option.yml
     release_date: '2026-05-13'
+  0.3.1:
+    changes:
+      bugfixes:
+      - Fix build collection. Lack files in manifest.
+      release_summary: Bugfix building tarbal.
+    fragments:
+    - fix-ansible-build-missing-ee-files.yml
+    release_date: '2026-05-14'

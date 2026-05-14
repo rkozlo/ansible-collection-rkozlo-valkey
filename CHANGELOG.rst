@@ -4,13 +4,27 @@ Ansible rkozlo.valkey collection changelog Release Notes
 
 .. contents:: Topics
 
+v0.3.1
+======
+
+Bugfixes
+--------
+
+- Fix build collection. Lack files in manifest.
+
 v0.3.0
 ======
+
+Release Summary
+---------------
+
+Introduce first version of cluster option. Basic cluster commands are supported now.
 
 Minor Changes
 -------------
 
 - Add cluster option to enable cluster mode. It will allow execute cluster_* methods with valkey_exec.
+- Option login_db required false from now.
 
 v0.2.0
 ======
