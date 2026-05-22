@@ -99,6 +99,7 @@ jobs:
           - "8.0.9"
           - "8.1.7"
           - "9.0.4"
+          - "9.1.0"
     steps:
       - name: Run integration tests
         uses: ansible-community/ansible-test-gh-action@release/v1
