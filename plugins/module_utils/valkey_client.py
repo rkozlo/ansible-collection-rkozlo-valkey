@@ -20,15 +20,36 @@ class ValkeyClient:
         self.login_port = port
         self.login_username = username
         self.login_password = password
-        self.client = None
         self.client_kwargs = client_kwargs
         self.cluster = cluster
+        self._client = None
         self._version = None
         self._aclsave_supported = None
 
         self.client_kwargs.setdefault('socket_connect_timeout', 5)
         self.client_kwargs.setdefault('socket_timeout', 5)
         self.client_kwargs.setdefault('decode_responses', True)
+
+    @property
+    def client(self):
+        if not self._client:
+            if self.cluster:
+                self._client = ValkeyCluster(
+                    host=self.login_host,
+                    port=self.login_port,
+                    username=self.login_username,
+                    password=self.login_password,
+                    **self.client_kwargs
+                )
+            else:
+                self._client = Valkey(
+                    host=self.login_host,
+                    port=self.login_port,
+                    username=self.login_username,
+                    password=self.login_password,
+                    **self.client_kwargs
+                )
+        return self._client
 
     @property
     def version(self):
@@ -46,24 +67,8 @@ class ValkeyClient:
         return self._aclsave_supported
 
     def _connect(self):
-        if not self.client:
+        if not self._client:
             try:
-                if self.cluster:
-                    self.client = ValkeyCluster(
-                        host=self.login_host,
-                        port=self.login_port,
-                        username=self.login_username,
-                        password=self.login_password,
-                        **self.client_kwargs
-                    )
-                else:
-                    self.client = Valkey(
-                        host=self.login_host,
-                        port=self.login_port,
-                        username=self.login_username,
-                        password=self.login_password,
-                        **self.client_kwargs
-                    )
                 self.client.ping()
             except valkey.exceptions.ConnectionError as e:
                 self.module.fail_json(
