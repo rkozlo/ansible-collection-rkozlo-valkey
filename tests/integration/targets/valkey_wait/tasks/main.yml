@@ -1,0 +1,23 @@
+---
+- name: Check if server is up
+  rkozlo.valkey.valkey_wait:
+    state: ready
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+
+- name: Check if server is up
+  rkozlo.valkey.valkey_wait:
+    state: ready
+    login_host: nonexists
+    timeout: 5
+  register: result
+  ignore_errors: true
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
