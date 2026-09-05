@@ -4,8 +4,8 @@ Ansible collection for managing Valkey users, executing raw Valkey commands, and
 
 ## Requirements
 
-- Ansible >= 2.17
-- Python >= 3.12
+- Ansible >= 2.18
+- Python >= 3.13
 - Valkey server >= 7.2
 - Python library valkey>=6.1.1,<7.0.0
 
