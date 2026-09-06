@@ -3,22 +3,22 @@
   rkozlo.valkey.valkey_exec:
     command: cluster_nodes
     cluster: true
-    login_port: 6378
+    login_port: 7000
 
 - name: Test cluster info
   rkozlo.valkey.valkey_exec:
     command: cluster_info
     cluster: true
-    login_port: 6378
+    login_port: 7000
 
 - name: Test cluster slots
   rkozlo.valkey.valkey_exec:
     command: cluster_slots
     cluster: true
-    login_port: 6378
+    login_port: 7000
 
 - name: Test cluster shards
   rkozlo.valkey.valkey_exec:
     command: cluster_shards
     cluster: true
-    login_port: 6378
+    login_port: 7000

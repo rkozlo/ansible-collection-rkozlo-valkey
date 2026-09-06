@@ -1,1 +1,7 @@
+- name: Stat
+  ansible.builtin.stat:
+    path: /tmp/server_up
+  register: up_status
+
 - import_tasks: install.yml
+  when: not up_status.stat.exists

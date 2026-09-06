@@ -21,6 +21,7 @@ ansible-galaxy collection install rkozlo.valkey
 - `rkozlo.valkey.valkey_user` — manage Valkey users, passwords, commands, categories, key patterns, and channels.
 - `rkozlo.valkey.valkey_exec` — execute arbitrary Valkey commands for advanced use cases.
 - `rkozlo.valkey.valkey_info` — retrieve Valkey server information and status.
+- `rkozlo.valkey.valkey_wait` — wait until Valkey will be in certain condition.
 
 ## Examples
 

@@ -24,6 +24,15 @@ description:
   - Can be used as orchestrator for example waiting until RDB is loading
     AOF is rewriting, replica is still syncing, valkey is not ready to accept connections.
 
+attributes:
+  check_mode:
+    description: Supports check_mode.
+    support: full
+  idempotent:
+    support: full
+    description:
+      - Module always returns changed=False.
+
 options:
   state:
     description:
@@ -31,14 +40,14 @@ options:
       - In this moment it accepts only I(ready).
       - Will check if valkey response is reachable, passed authentication working and responding to ping.
     type: str
+    default: ready
     choices: ['ready']
-    required: false
   interval:
     description:
       - Interval between checks in second.
     type: int
     default: 1
-  timeout:
+  retries:
     description:
       - How many tries until decides to fail.
       - Duration related with O(interval).
@@ -48,7 +57,7 @@ options:
     description:
       - Conditions module will observe if are met.
       - >
-        You can use any field described in INFO ex. [ {role: slave} ].
+        You can use any field described in INFO ex. {role: slave}.
     type: dict
     required: false
 '''
@@ -62,7 +71,7 @@ EXAMPLES = r'''
   rkozlo.valkey.valkey_wait:
     state: ready
     interval: 5
-    timeout: 10
+    retries: 10
 '''
 
 RETURN = r'''
@@ -81,8 +90,9 @@ info:
             "expected": "ready",
             "fail_retries": 0,
             "is_met": true,
-            "last_check_time": null,
-            "last_value": true
+            "last_check_at": "2026-09-06T08:45:44.136185",
+            "last_fail_at": "2026-09-06T08:45:44.136185",
+            "last_value": "ready"
         }
     }]
 fail_waits:
@@ -95,14 +105,16 @@ fail_waits:
             "expected": "ready",
             "fail_retries": 0,
             "is_met": false,
-            "last_check_time": null,
-            "last_value": false
+            "last_check_at": "2026-09-06T08:45:44.136185",
+            "last_fail_at": "2026-09-06T08:45:44.136185",
+            "last_value": "down"
         }
     }]
 '''
 
 
 from time import sleep
+from datetime import datetime
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.common.text.converters import to_native
 from ansible_collections.rkozlo.valkey.plugins.module_utils.valkey import get_client_common_argument_spec, get_main_conn_kwargs
@@ -122,7 +134,7 @@ class ValkeyWait:
         self.module = module
         self.client = client
         self.interval = module.params['interval']
-        self.timeout = module.params['timeout']
+        self.retries = module.params['retries']
         self.state = module.params['state']
         self.conditions = module.params['conditions']
         self._retry = 0
@@ -131,21 +143,23 @@ class ValkeyWait:
     def _initialize_statistics(self):
         statistics = {}
         base_info = {
-            'fail_retries': 0,
-            'last_value': 'down',
             'current_retry': 0,
-            'last_check_time': None,
+            'fail_retries': 0,
+            'last_check_at': None,
+            'last_fail_at': None,
             'is_met': False
         }
         if self.state:
             statistics['state'] = {
                 **base_info,
+                'last_value': 'down',
                 'expected': self.state,
             }
         if self.conditions:
             for condition, val in self.conditions.items():
                 statistics[condition] = {
                     **base_info,
+                    'last_value': None,
                     'expected': val,
                 }
         return statistics
@@ -159,23 +173,44 @@ class ValkeyWait:
         except valkey.exceptions.ConnectionError:
             return 'down'
         except valkey.exceptions.ResponseError:
-            return 'down'
+            return 'rejected'
         except Exception as e:
             self.module.fail_json(msg="Unexpected exception: %s" % to_native(e))
         return 'ready'
 
     def run(self):
-        while self._retry < self.timeout:
-            if not self.statistics['state']['is_met']:
-                return_state = self._wait_for_state()
-                self.statistics['state']['is_met'] = True if return_state == self.statistics['state']['expected'] else False
-                self.statistics['state']['last_value'] = return_state
-                self.statistics['state']['current_retry'] += 1
-                self._retry += 1
-                if self.statistics['state']['is_met']:
-                    return True
+        '''Run conditions and gather statistics.
+        Success when all of the conditions in single run met.
+        '''
+        while self._retry < self.retries:
+            self._retry += 1
+
+            return_state = self._wait_for_state()
+            self._set_statistics('state', return_state)
+            # State not ready so server will not be able to execute INFO command
+            if self.conditions and self.statistics['state']['is_met']:
+                info_result = self._fetch_info()
+                for cond in self.conditions.keys():
+                    try:
+                        value = info_result[cond]
+                    except KeyError:
+                        self.module.fail_json(msg=f'Passed condition {cond} was not found in INFO result')
+                    self._set_statistics(cond, value)
+            if not self.return_failed():
+                return True
             sleep(self.interval)
         return False
+
+    def _set_statistics(self, name, returned):
+        ts = datetime.now()
+        is_met = str(returned) == str(self.statistics[name]['expected'])
+        self.statistics[name]['is_met'] = is_met
+        self.statistics[name]['last_value'] = returned
+        self.statistics[name]['last_check_at'] = ts
+        self.statistics[name]['current_retry'] += 1
+        if not is_met:
+            self.statistics[name]['fail_retries'] += 1
+            self.statistics[name]['last_fail_at'] = ts
 
     def return_summary(self):
         return self.statistics
@@ -188,8 +223,8 @@ def main():
     argument_spec = get_client_common_argument_spec()
     argument_spec.update(
         interval=dict(type='int', default=1),
-        timeout=dict(type='int', default=60),
-        state=dict(type='str', required=False, choices=['ready']),
+        retries=dict(type='int', default=60),
+        state=dict(type='str', default='ready', choices=['ready']),
         conditions=dict(type='dict', required=False)
     )
     module = AnsibleModule(
@@ -209,7 +244,12 @@ def main():
     if result:
         module.exit_json(changed=False, info=valkey_wait.return_summary())
     else:
-        module.fail_json(msg="Failed", info=valkey_wait.return_summary(), fail_waits=valkey_wait.return_failed())
+        module.fail_json(
+            changed=False,
+            msg="Failed: " + ', '.join(valkey_wait.return_failed().keys()),
+            info=valkey_wait.return_summary(),
+            fail_waits=valkey_wait.return_failed()
+        )
 
 
 if __name__ == '__main__':

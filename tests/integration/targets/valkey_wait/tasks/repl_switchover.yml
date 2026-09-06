@@ -1,0 +1,16 @@
+---
+- name: repl_switchover | Promote to primary
+  rkozlo.valkey.valkey_exec:
+    login_port: "{{ primary_port }}"
+    command: REPLICAOF
+    args:
+      - "no"
+      - one
+
+- name: repl_switchover | Switch to replica
+  rkozlo.valkey.valkey_exec:
+    login_port: "{{ replica_port }}"
+    command: REPLICAOF
+    args:
+      - localhost
+      - "{{ primary_port }}"
