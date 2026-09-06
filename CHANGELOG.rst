@@ -4,8 +4,31 @@ Ansible rkozlo.valkey collection changelog Release Notes
 
 .. contents:: Topics
 
+v0.4.0
+======
+
+Release Summary
+---------------
+
+This is minor release of the collection.
+
+Minor Changes
+-------------
+
+- valkey_client - lazy load client. Allows module to handle on its own library exceptions.
+
+New Modules
+-----------
+
+- valkey_wait - Wait until Valkey will be in certain condition.
+
 v0.3.1
 ======
+
+Release Summary
+---------------
+
+Bugfix building tarbal.
 
 Bugfixes
 --------

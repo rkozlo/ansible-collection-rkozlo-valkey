@@ -33,3 +33,17 @@ releases:
     fragments:
     - fix-ansible-build-missing-ee-files.yml
     release_date: '2026-05-14'
+  0.4.0:
+    changes:
+      minor_changes:
+      - valkey_client - lazy load client. Allows module to handle on its own library
+        exceptions.
+      release_summary: This is minor release of the collection.
+    fragments:
+    - 0.4.0.yml
+    - make-client-lazy-loading.yml
+    modules:
+    - description: Wait until Valkey will be in certain condition.
+      name: valkey_wait
+      namespace: ''
+    release_date: '2026-09-06'
