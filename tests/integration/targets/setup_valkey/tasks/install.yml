@@ -16,10 +16,32 @@
     state: touch
     mode: 600
 
+- name: Create acl file for valkey2
+  ansible.builtin.file:
+    path: /valkey2.acl
+    state: touch
+    mode: 600
+
+- name: Create directories
+  ansible.builtin.file:
+    state: directory
+    name: "{{ item }}"
+  loop:
+    - /var/lib/valkey-6379/
+    - /var/lib/valkey-6380/
+
 - name: Start server
-  ansible.builtin.command: valkey-server --aclfile /valkey.acl --daemonize yes
+  ansible.builtin.command: valkey-server --aclfile /valkey.acl --daemonize yes --pidfile /var/run/valkey.pid --dir /var/lib/valkey-6379/
+
+- name: Start another server
+  ansible.builtin.command: valkey-server --aclfile /valkey2.acl --daemonize yes --port 6380 --pidfile /var/run/valkey2.pid --dir /var/lib/valkey-6380/
 
 - name: Install Python driver
   ansible.builtin.pip:
     name: valkey
     state: present
+
+- name: Set flag
+  ansible.builtin.file:
+    state: touch
+    path: /tmp/server_up

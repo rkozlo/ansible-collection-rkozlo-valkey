@@ -1,2 +1,2 @@
 server_extra_flags: --cluster-enabled yes
-valkey_version: 9.0.4
+valkey_version: 9.1.2

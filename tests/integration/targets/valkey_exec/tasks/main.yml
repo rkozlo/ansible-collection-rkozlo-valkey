@@ -19,16 +19,16 @@
     mode: 600
 
 - name: Start server 1
-  ansible.builtin.command: valkey-server --cluster-config-file /tmp/1.conf --cluster-enabled yes --daemonize yes --port 6378
+  ansible.builtin.command: valkey-server --cluster-config-file /tmp/1.conf --cluster-enabled yes --daemonize yes --port 7000
 
 - name: Start server 2
-  ansible.builtin.command: valkey-server --cluster-config-file /tmp/2.conf --cluster-enabled yes --daemonize yes --port 6380
+  ansible.builtin.command: valkey-server --cluster-config-file /tmp/2.conf --cluster-enabled yes --daemonize yes --port 7001
 
 - name: Start server 3
-  ansible.builtin.command: valkey-server --cluster-config-file /tmp/3.conf --cluster-enabled yes --daemonize yes --port 6381
+  ansible.builtin.command: valkey-server --cluster-config-file /tmp/3.conf --cluster-enabled yes --daemonize yes --port 7002
 
 - name: Create cluster
-  ansible.builtin.command: valkey-cli -p 6378 --cluster create 127.0.0.1:6378 127.0.0.1:6380 127.0.0.1:6381 --cluster-replicas 0 --cluster-yes
+  ansible.builtin.command: valkey-cli -p 7000 --cluster create 127.0.0.1:7000 127.0.0.1:7001 127.0.0.1:7002 --cluster-replicas 0 --cluster-yes
 
 - name: Install Python driver
   ansible.builtin.pip:

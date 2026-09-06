@@ -1,0 +1,160 @@
+---
+- name: Check if server is up
+  rkozlo.valkey.valkey_wait:
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+
+- name: Check if server is up - should fail
+  rkozlo.valkey.valkey_wait:
+    login_host: nonexists
+    retries: 5
+  register: result
+  ignore_errors: true
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - >
+        result.msg == 'Failed: state'
+
+- name: Check if server is up and replication role is met
+  rkozlo.valkey.valkey_wait:
+    conditions:
+      role: master
+
+- name: Check if server is up - another replica
+  rkozlo.valkey.valkey_wait:
+    login_port: 6380
+    conditions:
+      role: master
+
+- name: Setup replication
+  rkozlo.valkey.valkey_exec:
+    login_port: 6380
+    command: REPLICAOF
+    args:
+      - localhost
+      - 6379
+
+- name: Check if replication is up
+  rkozlo.valkey.valkey_wait:
+    login_port: 6380
+    conditions:
+      role: slave
+      master_link_status: up
+
+- name: Check if replica is connected
+  rkozlo.valkey.valkey_wait:
+    conditions:
+      role: master
+      connected_slaves: 1
+      replicas_waiting_psync: 0
+
+- name: Preceed switchover
+  vars:
+    primary_port: 6380
+    replica_port: 6379
+  ansible.builtin.include_tasks: repl_switchover.yml
+
+- name: Check if replica is connected
+  rkozlo.valkey.valkey_wait:
+    login_port: 6380
+    conditions:
+      role: master
+      connected_slaves: "1"
+      replicas_waiting_psync: 0
+
+- name: Check if replication is up
+  rkozlo.valkey.valkey_wait:
+    login_port: 6379
+    conditions:
+      role: slave
+      master_link_status: up
+
+- name: Switchover to base roles
+  vars:
+    primary_port: 6379
+    replica_port: 6380
+  ansible.builtin.include_tasks: repl_switchover.yml
+
+- name: Tear up replica
+  rkozlo.valkey.valkey_exec:
+    login_port: 6380
+    command: REPLICAOF
+    args:
+      - "no"
+      - one
+
+- name: Ensure old replica state
+  rkozlo.valkey.valkey_wait:
+    login_port: 6380
+    conditions:
+      role: master
+      connected_slaves: 0
+      replicas_waiting_psync: 0
+
+- name: Ensure primary state
+  rkozlo.valkey.valkey_wait:
+    login_port: 6379
+    conditions:
+      role: master
+      connected_slaves: 0
+      replicas_waiting_psync: 0
+
+- name: Ensure primary state - should fail one not met
+  rkozlo.valkey.valkey_wait:
+    login_port: 6379
+    retries: 3
+    conditions:
+      role: slave
+      connected_slaves: 0
+      replicas_waiting_psync: 0
+  register: result
+  ignore_errors: true
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - >
+        result.msg == "Failed: role"
+
+- name: Ensure primary state - should fail many not met
+  rkozlo.valkey.valkey_wait:
+    login_port: 6379
+    retries: 3
+    conditions:
+      role: slave
+      connected_slaves: 100
+      replicas_waiting_psync: a
+      loading: 1
+  register: result
+  ignore_errors: true
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - >
+        result.msg == "Failed: role, connected_slaves, replicas_waiting_psync, loading"
+
+- name: Ensure primary state - should fail key not in info
+  rkozlo.valkey.valkey_wait:
+    login_port: 6379
+    retries: 3
+    conditions:
+      dummy_info: a
+  register: result
+  ignore_errors: true
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - >
+        result.msg == "Passed condition dummy_info was not found in INFO result"
