@@ -1,2 +1,0 @@
-minor_changes:
-    - valkey_client - lazy load client. Allows module to handle on its own library exceptions.
