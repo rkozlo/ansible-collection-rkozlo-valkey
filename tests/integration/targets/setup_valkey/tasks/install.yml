@@ -10,31 +10,48 @@
     remote_src: true
     extra_opts: [--strip-components=1]
 
-- name: Create acl file for valkey
-  ansible.builtin.file:
-    path: /valkey.acl
-    state: touch
-    mode: 600
-
-- name: Create acl file for valkey2
-  ansible.builtin.file:
-    path: /valkey2.acl
-    state: touch
-    mode: 600
-
 - name: Create directories
   ansible.builtin.file:
     state: directory
-    name: "{{ item }}"
+    name: /var/lib/valkey-{{ item }}
   loop:
-    - /var/lib/valkey-6379/
-    - /var/lib/valkey-6380/
+    - 6379
+    - 6380
+    - 7000
+    - 7001
+    - 7002
+
+- name: Create acl file for valkey
+  ansible.builtin.file:
+    path: /var/lib/valkey-{{ item }}/valkey.acl
+    state: touch
+    mode: 600
+  loop:
+    - 6379
+    - 6380
+    - 7000
+    - 7001
+    - 7002
 
 - name: Start server
-  ansible.builtin.command: valkey-server --aclfile /valkey.acl --daemonize yes --pidfile /var/run/valkey.pid --dir /var/lib/valkey-6379/
+  ansible.builtin.command: valkey-server --aclfile valkey.acl --daemonize yes --pidfile /var/run/valkey.pid --dir /var/lib/valkey-6379/
 
 - name: Start another server
-  ansible.builtin.command: valkey-server --aclfile /valkey2.acl --daemonize yes --port 6380 --pidfile /var/run/valkey2.pid --dir /var/lib/valkey-6380/
+  ansible.builtin.command: valkey-server --aclfile valkey.acl --daemonize yes --port 6380 --pidfile /var/run/valkey2.pid --dir /var/lib/valkey-6380/
+
+- name: Start cluster
+  block:
+    - name: Start server 1
+      ansible.builtin.command: valkey-server --aclfile valkey.acl --cluster-config-file /tmp/1.conf --cluster-enabled yes --daemonize yes --port 7000 --dir /var/lib/valkey-7000/
+
+    - name: Start server 2
+      ansible.builtin.command: valkey-server --aclfile valkey.acl --cluster-config-file /tmp/2.conf --cluster-enabled yes --daemonize yes --port 7001 --dir /var/lib/valkey-7001/
+
+    - name: Start server 3
+      ansible.builtin.command: valkey-server --aclfile valkey.acl --cluster-config-file /tmp/3.conf --cluster-enabled yes --daemonize yes --port 7002 --dir /var/lib/valkey-7002/
+
+    - name: Create cluster
+      ansible.builtin.command: valkey-cli -p 7000 --cluster create 127.0.0.1:7000 127.0.0.1:7001 127.0.0.1:7002 --cluster-replicas 0 --cluster-yes
 
 - name: Install Python driver
   ansible.builtin.pip:

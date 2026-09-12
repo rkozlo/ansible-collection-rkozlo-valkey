@@ -53,7 +53,6 @@
     conditions:
       role: master
       connected_slaves: 1
-      replicas_waiting_psync: 0
 
 - name: Preceed switchover
   vars:
@@ -67,7 +66,6 @@
     conditions:
       role: master
       connected_slaves: "1"
-      replicas_waiting_psync: 0
 
 - name: Check if replication is up
   rkozlo.valkey.valkey_wait:
@@ -96,7 +94,6 @@
     conditions:
       role: master
       connected_slaves: 0
-      replicas_waiting_psync: 0
 
 - name: Ensure primary state
   rkozlo.valkey.valkey_wait:
@@ -104,7 +101,6 @@
     conditions:
       role: master
       connected_slaves: 0
-      replicas_waiting_psync: 0
 
 - name: Ensure primary state - should fail one not met
   rkozlo.valkey.valkey_wait:
@@ -113,7 +109,6 @@
     conditions:
       role: slave
       connected_slaves: 0
-      replicas_waiting_psync: 0
   register: result
   ignore_errors: true
 
@@ -131,7 +126,6 @@
     conditions:
       role: slave
       connected_slaves: 100
-      replicas_waiting_psync: a
       loading: 1
   register: result
   ignore_errors: true
@@ -141,7 +135,7 @@
     that:
       - result.failed == true
       - >
-        result.msg == "Failed: role, connected_slaves, replicas_waiting_psync, loading"
+        result.msg == "Failed: role, connected_slaves, loading"
 
 - name: Ensure primary state - should fail key not in info
   rkozlo.valkey.valkey_wait:
