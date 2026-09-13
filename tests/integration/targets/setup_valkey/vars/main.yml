@@ -1,1 +1,2 @@
-valkey_version: 9.1.2
+valkey_version: 7.2.14
+secret_hidden: true

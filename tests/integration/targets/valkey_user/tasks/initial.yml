@@ -4,35 +4,107 @@
       - name: test_user_1
         enabled: true
         passwords: ['test_pass']
-        __expected_query: {"action": "create_user", "params": {"username": "test_user_1", "enabled": true, "passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false}}
-        __expected_alter: {"action": "update_user", "params": {"username": "test_user_1", "enabled": true, "passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false}}
+        __expected_query: {
+          "action": "create_user",
+          "params": {
+            "username": "test_user_1", "enabled": true,
+            "passwords": ["+{{ secret_hidden | ternary('********', 'test_pass') }}"],
+            "reset_passwords": false, "reset_keys": false, "reset_channels": false
+          }
+        }
+        __expected_alter: {
+          "action": "update_user",
+          "params": {
+            "username": "test_user_1", "enabled": true,
+            "passwords": ["+{{ secret_hidden | ternary('********', 'test_pass') }}"],
+            "reset_passwords": false, "reset_keys": false, "reset_channels": false
+          }
+        }
         __expected_drop: {"action": "delete_user", "args": ["test_user_1"]}
       - name: test_user_2
         enabled: true
         passwords: ['test_pass']
-        __expected_query: {"action": "create_user", "params": {"username": "test_user_2", "enabled": true, "passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false}}
-        __expected_alter: {"action": "update_user", "params": {"username": "test_user_2", "enabled": true, "passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false}}
+        __expected_query: {
+          "action": "create_user",
+          "params": {
+            "username": "test_user_2", "enabled": true,
+            "passwords": ["+{{ secret_hidden | ternary('********', 'test_pass') }}"],
+            "reset_passwords": false, "reset_keys": false, "reset_channels": false
+          }
+        }
+        __expected_alter: {
+          "action": "update_user",
+          "params": {
+            "username": "test_user_2", "enabled": true,
+            "passwords": ["+{{ secret_hidden | ternary('********', 'test_pass') }}"],
+            "reset_passwords": false, "reset_keys": false, "reset_channels": false
+          }
+        }
         __expected_drop: {"action": "delete_user", "args": ["test_user_2"]}
       - name: test_user_4
         enabled: true
         hashed_passwords: ['10a6e6cc8311a3e2bcc09bf6c199adecd5dd59408c343e926b129c4914f3cb01']
-        __expected_query: {"action": "create_user", "params": {"username": "test_user_4", "enabled": true, "hashed_passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false}}
-        __expected_alter: {"action": "update_user", "params": {"username": "test_user_4", "enabled": true, "hashed_passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false}}
+        __expected_query: {
+          "action": "create_user",
+          "params": {
+            "username": "test_user_4", "enabled": true,
+            "hashed_passwords": ["+{{ secret_hidden | ternary('********', '10a6e6cc8311a3e2bcc09bf6c199adecd5dd59408c343e926b129c4914f3cb01') }}"],
+            "reset_passwords": false, "reset_keys": false, "reset_channels": false}}
+        __expected_alter: {
+          "action": "update_user",
+          "params": {
+            "username": "test_user_4", "enabled": true,
+            "hashed_passwords": ["+{{ secret_hidden | ternary('********', '10a6e6cc8311a3e2bcc09bf6c199adecd5dd59408c343e926b129c4914f3cb01') }}"],
+            "reset_passwords": false, "reset_keys": false, "reset_channels": false
+          }
+        }
         __expected_drop: {"action": "delete_user", "args": ["test_user_4"]}
       - name: test_user_5
         enabled: true
         passwords: ['ansi']
         hashed_passwords: ['10a6e6cc8311a3e2bcc09bf6c199adecd5dd59408c343e926b129c4914f3cb01']
-        __expected_query: {"action": "create_user", "params": {"username": "test_user_5", "enabled": true, "passwords": ['+********'], "hashed_passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false}}
-        __expected_alter: {"action": "update_user", "params": {"username": "test_user_5", "enabled": true, "passwords": ['+********'], "hashed_passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false}}
+        __expected_query: {
+          "action": "create_user",
+          "params": {
+            "username": "test_user_5", "enabled": true,
+            "passwords": ["+{{ secret_hidden | ternary('********', 'ansi') }}"],
+            "hashed_passwords": ["+{{ secret_hidden | ternary('********', '10a6e6cc8311a3e2bcc09bf6c199adecd5dd59408c343e926b129c4914f3cb01') }}"],
+            "reset_passwords": false, "reset_keys": false, "reset_channels": false
+          }
+        }
+        __expected_alter: {
+          "action": "update_user",
+          "params": {
+            "username": "test_user_5", "enabled": true,
+            "passwords": ["+{{ secret_hidden | ternary('********', 'ansi') }}"],
+            "hashed_passwords": ["+{{ secret_hidden | ternary('********', '10a6e6cc8311a3e2bcc09bf6c199adecd5dd59408c343e926b129c4914f3cb01') }}"],
+            "reset_passwords": false, "reset_keys": false, "reset_channels": false
+          }
+        }
         __expected_drop: {"action": "delete_user", "args": ["test_user_5"]}
       - name: test_user_6
         enabled: true
         passwords: ['ansi']
         hashed_passwords: ['10a6e6cc8311a3e2bcc09bf6c199adecd5dd59408c343e926b129c4914f3cb01']
         reset_passwords: true
-        __expected_query: {"action": "create_user", "params": {"username": "test_user_6", "enabled": true, "passwords": ['+********'], "hashed_passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false}}
-        __expected_alter: {"action": "update_user", "params": {"username": "test_user_6", "enabled": true, "passwords": ['+********'], "hashed_passwords": ['+********'], "reset_passwords": true, "reset_keys": false, "reset_channels": false}}
+        __expected_query: {
+          "action": "create_user",
+          "params": {
+            "username": "test_user_6", "enabled": true,
+            "passwords": ["+{{ secret_hidden | ternary('********', 'ansi') }}"],
+            "hashed_passwords": ["+{{ secret_hidden | ternary('********', '10a6e6cc8311a3e2bcc09bf6c199adecd5dd59408c343e926b129c4914f3cb01') }}"],
+            "reset_passwords": false, "reset_keys": false, "reset_channels": false
+          }
+        }
+        __expected_alter: {
+          "action": "update_user",
+          "params": {
+            "username": "test_user_6", "enabled": true,
+            "passwords": ["+{{ secret_hidden | ternary('********', 'ansi') }}"],
+            "hashed_passwords": ["+{{ secret_hidden | ternary('********', '10a6e6cc8311a3e2bcc09bf6c199adecd5dd59408c343e926b129c4914f3cb01') }}"],
+            "reset_passwords": true, "reset_keys": false, "reset_channels": false
+          }
+        }
         __expected_drop: {"action": "delete_user", "args": ["test_user_6"]}
       - name: test_user_7
         enabled: true
@@ -40,8 +112,26 @@
         hashed_passwords: ['10a6e6cc8311a3e2bcc09bf6c199adecd5dd59408c343e926b129c4914f3cb01']
         categories: ['+@all']
         reset_passwords: false
-        __expected_query: {"action": "create_user", "params": {"username": "test_user_7", "enabled": true, "passwords": ['+********'], "hashed_passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false, "categories": ['+@all']}}
-        __expected_alter: {"action": "update_user", "params": {"username": "test_user_7", "enabled": true, "passwords": ['+********'], "hashed_passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false, "categories": ['+@all']}}
+        __expected_query: {
+          "action": "create_user",
+          "params": {
+            "username": "test_user_7", "enabled": true,
+            "passwords": ["+{{ secret_hidden | ternary('********', 'ansi') }}"],
+            "hashed_passwords": ["+{{ secret_hidden | ternary('********', '10a6e6cc8311a3e2bcc09bf6c199adecd5dd59408c343e926b129c4914f3cb01') }}"],
+            "reset_passwords": false, "reset_keys": false, "reset_channels": false,
+            "categories": ['+@all']
+          }
+        }
+        __expected_alter: {
+          "action": "update_user",
+          "params": {
+            "username": "test_user_7", "enabled": true,
+            "passwords": ["+{{ secret_hidden | ternary('********', 'ansi') }}"],
+            "hashed_passwords": ["+{{ secret_hidden | ternary('********', '10a6e6cc8311a3e2bcc09bf6c199adecd5dd59408c343e926b129c4914f3cb01') }}"],
+            "reset_passwords": false, "reset_keys": false, "reset_channels": false,
+            "categories": ['+@all']
+          }
+        }
         __expected_drop: {"action": "delete_user", "args": ["test_user_7"]}
       - name: test_user_8
         enabled: true
@@ -49,8 +139,24 @@
         categories: ['+@all']
         reset_passwords: false
         reset_categories: true
-        __expected_query: {"action": "create_user", "params": {"username": "test_user_8", "enabled": true, "passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false, "categories": ['+@all']}}
-        __expected_alter: {"action": "update_user", "params": {"username": "test_user_8", "enabled": true, "passwords": ['+********'], "reset_passwords": false, "reset_keys": false, "reset_channels": false, "categories": ['+@all']}}
+        __expected_query: {
+          "action": "create_user",
+          "params": {
+            "username": "test_user_8", "enabled": true,
+            "passwords": ["+{{ secret_hidden | ternary('********', 'ansi') }}"],
+            "reset_passwords": false, "reset_keys": false, "reset_channels": false,
+            "categories": ['+@all']
+          }
+        }
+        __expected_alter: {
+          "action": "update_user",
+          "params": {
+            "username": "test_user_8", "enabled": true,
+            "passwords": ["+{{ secret_hidden | ternary('********', 'ansi') }}"],
+            "reset_passwords": false, "reset_keys": false, "reset_channels": false,
+            "categories": ['+@all']
+          }
+        }
         __expected_drop: {"action": "delete_user", "args": ["test_user_8"]}
 
 - name: Create plain test user in check mode
@@ -149,11 +255,12 @@
       - result.changed == True
       - result.executed_statements | length == 2
       - result.executed_statements[0].action == 'update_user'
+      - result.executed_statements[0].params.passwords[0] == "+{{ secret_hidden | ternary('********', 'test_password') }}"
       - >-
         result.executed_statements[0].params == {
           'username': 'test_user',
           'enabled': True,
-          'passwords': ['+********'],
+          'passwords': ['+{{ secret_hidden | ternary("********", "test_password") }}'],
           'reset_passwords': False,
           'reset_keys': False,
           'reset_channels': False
@@ -212,7 +319,7 @@
         result.executed_statements[0].params == {
           'username': 'test_user',
           'enabled': True,
-          'passwords': ['+********'],
+          'passwords': ['+{{ secret_hidden | ternary("********", "test_password") }}'],
           'reset_passwords': False,
           'reset_keys': False,
           'reset_channels': False
@@ -259,7 +366,7 @@
         result.executed_statements[0].params == {
           'username': 'test_user',
           'enabled': True,
-          'passwords': ['+********'],
+          'passwords': ['+{{ secret_hidden | ternary("********", "test_password2") }}'],
           'reset_passwords': False,
           'reset_keys': False,
           'reset_channels': False
@@ -307,7 +414,7 @@
         result.executed_statements[0].params == {
           'username': 'test_user',
           'enabled': True,
-          'passwords': ['+********'],
+          'passwords': ['+{{ secret_hidden | ternary("********", "test_password") }}'],
           'reset_passwords': True,
           'reset_keys': False,
           'reset_channels': False
@@ -404,11 +511,6 @@
     that:
       - result.changed == False
       - result.executed_statements == []
-
-# - name: Create test user without save_acls in check mode
-#   rkozlo.valkey.valkey_user:
-#     name: test_user
-#     state: present
 
 - name: Test passwords
   block:
