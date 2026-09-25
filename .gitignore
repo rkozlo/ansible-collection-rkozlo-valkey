@@ -15,4 +15,4 @@ venv/
 *.swp
 .DS_Store
 .plugin-cache.yaml
-
+eggs/

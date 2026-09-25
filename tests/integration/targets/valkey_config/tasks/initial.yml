@@ -1,0 +1,197 @@
+- name: Change configs in check mode
+  rkozlo.valkey.valkey_config:
+    configs:
+      maxmemory: 100000
+  register: result
+  check_mode: true
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed is true
+
+- name: Check actual value
+  rkozlo.valkey.valkey_exec:
+    command: config_get
+    args:
+      - maxmemory
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.result['maxmemory'] == "0"
+
+- name: Change configs in real mode
+  rkozlo.valkey.valkey_config:
+    configs:
+      maxmemory: 100000
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed is true
+
+- name: Check actual value
+  rkozlo.valkey.valkey_exec:
+    command: config_get
+    args:
+      - maxmemory
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.result['maxmemory'] == "100000"
+
+- name: Change configs in real mode - idempotency
+  rkozlo.valkey.valkey_config:
+    configs:
+      maxmemory: 100000
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+
+- name: Change configs immutable not differs
+  rkozlo.valkey.valkey_config:
+    configs:
+      maxmemory: 100000
+      io-threads: 1
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+
+- name: Change configs immutable differs
+  rkozlo.valkey.valkey_config:
+    configs:
+      maxmemory: 100000
+      io-threads: 2
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+      - result.immutable | length == 1
+
+- name: Change configs in strict mode - should fail
+  rkozlo.valkey.valkey_config:
+    configs:
+      maxmemory: 100000
+      io-threads: 2
+    strict: true
+  register: result
+  ignore_errors: true
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.failed is true
+
+- name: Change configs in strict mode - should pass
+  rkozlo.valkey.valkey_config:
+    configs:
+      maxmemory: 100000
+      io-threads: 1
+    strict: true
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+
+- name: Change configs more complex case
+  rkozlo.valkey.valkey_config:
+    configs:
+      client-output-buffer-limit: "normal 1 1 1"
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed is true
+
+- name: Change configs more complex case
+  rkozlo.valkey.valkey_config:
+    configs:
+      client-output-buffer-limit: "normal 1 1 1 slave 268435456 67108864 60 pubsub 33554432 8388608 60"
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+
+- name: Pass dummy config
+  rkozlo.valkey.valkey_config:
+    configs:
+      dummy: "1"
+  register: result
+  ignore_errors: true
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.msg == "Configs dummy is not known in this version"
+
+- name: Change configs with testing normalization
+  rkozlo.valkey.valkey_config:
+    configs:
+      maxmemory: 100K
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+
+- name: Change configs with testing normalization
+  rkozlo.valkey.valkey_config:
+    configs:
+      maxmemory: 100mb
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed is true
+
+- name: Check actual value
+  rkozlo.valkey.valkey_exec:
+    command: config_get
+    args:
+      - maxmemory
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.result['maxmemory'] == "104857600"
+
+- name: Try rewrite but not supported
+  rkozlo.valkey.valkey_config:
+    configs:
+      maxmemory: 101mb
+    config_rewrite: true
+  register: result
+  ignore_errors: true
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.failed is true
+      - result.msg == 'Config rewrite passed but not supported on this instance. Config file is not defined.'
+
+- name: Set default configs
+  rkozlo.valkey.valkey_config:
+    configs:
+      client-output-buffer-limit: "normal 0 0 0 slave 268435456 67108864 60 pubsub 33554432 8388608 60"
+      maxmemory: 0
