@@ -1,6 +1,8 @@
 from __future__ import absolute_import, division, print_function
-
+import re
 __metaclass__ = type
+
+POSSIBLE_SIZE_PATTERN = re.compile(r'^([\d]+)(K|M|G|KB|MB|GB)$', re.IGNORECASE)
 
 
 def get_client_common_argument_spec():
@@ -48,3 +50,17 @@ def _make_serializable(obj):
         return [_make_serializable(item) for item in obj]
     else:
         return obj
+
+
+def to_bytes_data(value):
+    units = {
+        'KB': 1024**1,
+        'MB': 1024**2,
+        'GB': 1024**3,
+        'K': 1000**1,
+        'M': 1000**2,
+        'G': 1000**3,
+    }
+    match = POSSIBLE_SIZE_PATTERN.match(value)
+
+    return int(match.group(1)) * units[match.group(2).upper()]

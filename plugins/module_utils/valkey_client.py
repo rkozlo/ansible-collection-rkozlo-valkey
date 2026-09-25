@@ -25,6 +25,7 @@ class ValkeyClient:
         self._client = None
         self._version = None
         self._aclsave_supported = None
+        self._config_rewrite_supported = None
 
         self.client_kwargs.setdefault('socket_connect_timeout', 5)
         self.client_kwargs.setdefault('socket_timeout', 5)
@@ -54,9 +55,21 @@ class ValkeyClient:
     @property
     def version(self):
         if self._version is None:
-            info = self._execute('info', 'server')
-            self._version = info.get('valkey_version')
+            self._fetch_server_section()
         return self._version
+
+    def _fetch_server_section(self):
+        info = self._execute('info', 'server')
+        ver = info.get('valkey_version')
+        config_file_exists = False if info.get('config_file', '') == '' else True
+        splited = ver.split('.')
+        self._version = {
+            'full': ver,
+            'major': splited[0],
+            'minor': splited[1],
+            'patch': splited[2],
+        }
+        self._config_rewrite_supported = config_file_exists
 
     @property
     def aclsave_supported(self):
@@ -65,6 +78,12 @@ class ValkeyClient:
 
             self._aclsave_supported = True if result.get('aclfile', '') else False
         return self._aclsave_supported
+
+    @property
+    def config_rewrite_supported(self):
+        if self._config_rewrite_supported is None:
+            self._fetch_server_section()
+        return self._config_rewrite_supported
 
     def _connect(self):
         if not self._client:

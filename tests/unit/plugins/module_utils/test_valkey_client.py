@@ -39,7 +39,7 @@ def test_valkey_client_version_caching(valkey_client, mocker):
     mocker.patch.object(valkey_client, '_execute', return_value={'valkey_version': '9.0.0', 'valkey_release_stage': 'ga'})
     version = valkey_client.version
 
-    assert version == '9.0.0'
+    assert version['full'] == '9.0.0'
     valkey_client._execute.assert_called_once_with('info', 'server')
 
 
