@@ -4,6 +4,19 @@ Ansible rkozlo.valkey collection changelog Release Notes
 
 .. contents:: Topics
 
+v0.5.0
+======
+
+Release Summary
+---------------
+
+This is minor release of the collection.
+
+New Modules
+-----------
+
+- valkey_config - Change runtime valkey configs.
+
 v0.4.0
 ======
 
