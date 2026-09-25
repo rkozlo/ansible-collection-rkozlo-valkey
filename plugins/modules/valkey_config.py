@@ -188,7 +188,7 @@ class ValkeyConfig:
 
         if immutable:
             if self.strict:
-                self.module.fail_json(f'''Configs differs but can't be changed becuse they are immutable: {immutable}''')
+                self.module.fail_json(msg=f"Configs differ but can't be changed because they are immutable: {immutable}")
             else:
                 self.module.warn(f'''configs: {immutable} are immutable and can't be changed during runtime.''')
         if to_change_configs:
@@ -199,6 +199,9 @@ class ValkeyConfig:
                 if self.config_rewrite:
                     self.client._execute('config_rewrite')
             diff.append(self.build_to_string(config, value))
+        if self.config_rewrite and to_change_configs:
+            if not self.module.check_mode:
+                self.client._execute('config_rewrite')
 
         for config, value in immutable.items():
             cant_change.append(self.build_to_string(config, value))

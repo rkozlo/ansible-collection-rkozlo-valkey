@@ -56,7 +56,7 @@
     that:
       - result.changed is false
 
-- name: Change configs immutable not differs
+- name: Change configs immutable not differ
   rkozlo.valkey.valkey_config:
     configs:
       maxmemory: 100000
@@ -68,11 +68,11 @@
     that:
       - result.changed is false
 
-- name: Change configs immutable differs
+- name: Change configs immutable differ
   rkozlo.valkey.valkey_config:
     configs:
       maxmemory: 100000
-      io-threads: 2
+      replicaof: example1
   register: result
 
 - name: Check result
@@ -85,7 +85,7 @@
   rkozlo.valkey.valkey_config:
     configs:
       maxmemory: 100000
-      io-threads: 2
+      replicaof: example1
     strict: true
   register: result
   ignore_errors: true

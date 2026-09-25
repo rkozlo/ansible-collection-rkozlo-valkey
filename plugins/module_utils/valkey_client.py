@@ -67,7 +67,7 @@ class ValkeyClient:
             'full': ver,
             'major': splited[0],
             'minor': splited[1],
-            'feature': splited[2],
+            'patch': splited[2],
         }
         self._config_rewrite_supported = config_file_exists
 
