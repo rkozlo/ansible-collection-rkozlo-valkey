@@ -47,3 +47,13 @@ releases:
       name: valkey_wait
       namespace: ''
     release_date: '2026-09-06'
+  0.5.0:
+    changes:
+      release_summary: This is minor release of the collection.
+    fragments:
+    - 0.5.0.yml
+    modules:
+    - description: Change runtime valkey configs.
+      name: valkey_config
+      namespace: ''
+    release_date: '2026-09-25'
