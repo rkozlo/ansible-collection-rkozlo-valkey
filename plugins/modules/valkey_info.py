@@ -25,6 +25,14 @@ description:
   - The module supports retrieving specific sections of information based on the provided parameters.
   - Possible sections can be found L(info,https://valkey.io/commands/info/).
 
+attributes:
+  check_mode:
+    description: Supports check_mode.
+    support: full
+  idempotent:
+    description: Module always returns changed=False.
+    support: full
+
 options:
   sections:
     description:
@@ -69,7 +77,7 @@ info:
   description: Dictionary containing the Valkey server information
   type: dict
   returned: always
-  example:
+  sample:
     info:
       valkey_version: "9.0.0"
       valkey_mode: "standalone"

@@ -26,6 +26,14 @@ description:
     channels and categories.
   - It also supports appending new passwords, keys, or channels to existing ones without overwriting them.
 
+attributes:
+  check_mode:
+    description: Supports check_mode.
+    support: full
+  idempotent:
+    description: When run twice in a row outside check mode, with the same arguments, the second invocation indicates no change.
+    support: full
+
 options:
   name:
     description:
@@ -237,6 +245,19 @@ executed_statements:
       description: Arguments for delete_user operation
       type: list
       sample: ["test_user"]
+  sample:
+    - action: "update_user"
+      params:
+        enabled: true
+        hashed_passwords:
+          - "+********"
+        passwords:
+          - "+********"
+        reset_channels: false
+        reset_keys: false
+        reset_passwords: true
+        username: "test_user_6"
+    - action: "acl_save"
 '''
 
 import hashlib

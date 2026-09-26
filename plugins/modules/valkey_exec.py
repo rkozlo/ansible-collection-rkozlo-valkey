@@ -24,7 +24,13 @@ description:
   - Notice that this module will call library method directly.
   - Parameters should be provided in the format expected by the library.
   - For command syntax, see https://valkey-py.readthedocs.io/en/latest/commands.html.
-
+attributes:
+  check_mode:
+    description: Does support check_mode.
+    support: full
+  idempotent:
+    description: Module always returns changed=True.
+    support: none
 options:
   command:
     description:
@@ -86,13 +92,23 @@ result:
   description: Raw response returned by the executed Valkey command.
   type: raw
   returned: always
-  example: "value1"
+  sample: "value1"
 executed_statements:
   description: A list of executed commands with provided positional and keyword arguments.
   type: list
   returned: always
   elements: dict
-  example:
+  contains:
+    command:
+      description: Executed command.
+      type: str
+    args:
+      description: Arguments passed to command.
+      type: list
+    params:
+      description: Parameters passed to command.
+      type: dict
+  sample:
     - command: get
       args:
         - mykey

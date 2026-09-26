@@ -84,25 +84,41 @@ RETURN = r'''
 diff:
   description: List of changes that differs but can't be applied.
   type: list
-  returned: on_success
-  example: [
-            {
-                "after": 100000,
-                "before": "0",
-                "name": "maxmemory"
-            }
-        ]
+  elements: dict
+  returned: on success
+  contains:
+    after:
+      description: Value after change.
+      type: str
+    before:
+      description: Value before change.
+      type: str
+    name:
+      description: Name of changed config.
+      type: str
+  sample:
+    - after: 100000
+      before: "0"
+      name: "maxmemory"
 immutable:
   description: List of changes that differs been aplied.
   type: list
-  returned: on_success
-  example: [
-        {
-            "after": 2,
-            "before": "1",
-            "name": "io-threads"
-        }
-    ]
+  elements: dict
+  returned: on success
+  contains:
+    after:
+      description: Value after change.
+      type: str
+    before:
+      description: Value before change.
+      type: str
+    name:
+      description: Name of changed config.
+      type: str
+  sample:
+    - after: 2
+      before: "1"
+      name: io-threads
 '''
 
 from ansible.module_utils.basic import AnsibleModule
