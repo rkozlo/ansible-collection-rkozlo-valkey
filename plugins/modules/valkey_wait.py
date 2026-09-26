@@ -105,32 +105,45 @@ info:
   description: Statistics about wait status.
   returned: always
   type: dict
-  sample: [{
-        "state": {
-            "current_retry": 1,
-            "expected": "ready",
-            "fail_retries": 0,
-            "is_met": true,
-            "last_check_at": "2026-09-06T08:45:44.136185",
-            "last_fail_at": "2026-09-06T08:45:44.136185",
-            "last_value": "ready"
-        }
-    }]
+  sample:
+    - - state:
+        current_retry: 1
+        expected: "ready"
+        fail_retries: 0
+        is_met: true
+        last_check_at: "2026-09-06T08:45:44.136185"
+        last_fail_at: "2026-09-06T08:45:44.136185"
+        last_value: "ready"
+      - connected_slaves:
+        current_retry: 1
+        expected: 0
+        fail_retries: 0
+        is_met: true
+        last_check_at: "2026-09-26T08:00:36.726220"
+        last_fail_at: null
+        last_value: 0
+      - role:
+        current_retry: 1
+        expected: "master"
+        fail_retries: 0
+        is_met: true
+        last_check_at: "2026-09-26T08:00:36.726217"
+        last_fail_at: null
+        last_value: "master"
+
 fail_waits:
   description: Statistics about failed waits.
   returned: on failure
   type: dict
-  sample: [{
-        "state": {
-            "current_retry": 5,
-            "expected": "ready",
-            "fail_retries": 0,
-            "is_met": false,
-            "last_check_at": "2026-09-06T08:45:44.136185",
-            "last_fail_at": "2026-09-06T08:45:44.136185",
-            "last_value": "down"
-        }
-    }]
+  sample:
+    - state:
+      current_retry: 5
+      expected: "ready"
+      fail_retries: 0
+      is_met: false
+      last_check_at: "2026-09-06T08:45:44.136185"
+      last_fail_at: "2026-09-06T08:45:44.136185"
+      last_value: "down"
 '''
 
 
