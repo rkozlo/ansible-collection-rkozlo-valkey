@@ -1,0 +1,2 @@
+bugfixes:
+  - valkey_config - properly handle yes/no as value. Ansible silently converts them to bool value so normalize it in module to yes/no.

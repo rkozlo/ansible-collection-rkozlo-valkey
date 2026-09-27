@@ -35,14 +35,14 @@ def test_load_configs(valkey_config):
     ({'mamemory_policy': 'volatile-ttl'}, {}),
     ({'mamemory_policy': 'allkeys-lfu', 'bind': '0.0.0.1'}, {'mamemory_policy': 'allkeys-lfu', 'bind': '0.0.0.1'}),
     ({'mamemory_policy': 'allkeys-lfu', 'bind': '0.0.0.0'}, {'mamemory_policy': 'allkeys-lfu'}),
-    ({'mamemory_policy': 'allkeys-lfu', 'activedefrag': True}, {'mamemory_policy': 'allkeys-lfu'}),
-    ({'mamemory_policy': 'allkeys-lfu', 'activedefrag': False}, {'mamemory_policy': 'allkeys-lfu', 'activedefrag': False}),
+    ({'mamemory_policy': 'allkeys-lfu', 'activedefrag': 'yes'}, {'mamemory_policy': 'allkeys-lfu'}),
+    ({'mamemory_policy': 'allkeys-lfu', 'activedefrag': 'no'}, {'mamemory_policy': 'allkeys-lfu', 'activedefrag': 'no'}),
 ])
 def test_get_diff_runtime_configs(valkey_config, settings, expected):
     valkey_config._config = {
         'mamemory_policy': 'volatile-ttl',
         'bind': '0.0.0.0',
-        'activedefrag': True,
+        'activedefrag': 'yes',
         'save': '',
     }
     result = valkey_config.get_diff_runtime_configs(settings)
