@@ -233,8 +233,13 @@ class ValkeyConfig:
 
     def normalize_value(self, value):
         if POSSIBLE_SIZE_PATTERN.match(str(value)):
-            return to_bytes_data(value)
-        return value
+            return to_bytes_data(str(value))
+        # Ansible translate yes/no to bool True/False so explicity handle this.
+        elif value is False:
+            return "no"
+        elif value is True:
+            return "yes"
+        return str(value)
 
     def validate_passed_params(self):
         if self.config_rewrite and not self.client.config_rewrite_supported:

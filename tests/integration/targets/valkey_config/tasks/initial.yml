@@ -60,7 +60,7 @@
   rkozlo.valkey.valkey_config:
     configs:
       maxmemory: 100000
-      io-threads: 1
+      appenddirname: appendonlydir
   register: result
 
 - name: Check result
@@ -72,7 +72,7 @@
   rkozlo.valkey.valkey_config:
     configs:
       maxmemory: 100000
-      replicaof: example1
+      appenddirname: appendonlydir2
   register: result
 
 - name: Check result
@@ -85,7 +85,7 @@
   rkozlo.valkey.valkey_config:
     configs:
       maxmemory: 100000
-      replicaof: example1
+      appenddirname: appendonlydir2
     strict: true
   register: result
   ignore_errors: true
@@ -99,7 +99,7 @@
   rkozlo.valkey.valkey_config:
     configs:
       maxmemory: 100000
-      io-threads: 1
+      appenddirname: appendonlydir
     strict: true
   register: result
 
@@ -107,6 +107,28 @@
   ansible.builtin.assert:
     that:
       - result.changed is false
+
+- name: Change configs bool value - no change
+  rkozlo.valkey.valkey_config:
+    configs:
+      appendonly: no
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+
+- name: Change configs bool value - changed
+  rkozlo.valkey.valkey_config:
+    configs:
+      appendonly: yes
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed is true
 
 - name: Change configs more complex case
   rkozlo.valkey.valkey_config:
@@ -195,3 +217,4 @@
     configs:
       client-output-buffer-limit: "normal 0 0 0 slave 268435456 67108864 60 pubsub 33554432 8388608 60"
       maxmemory: 0
+      appendonly: false
