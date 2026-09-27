@@ -57,3 +57,13 @@ releases:
       name: valkey_config
       namespace: ''
     release_date: '2026-09-25'
+  0.5.1:
+    changes:
+      bugfixes:
+      - valkey_config - properly handle yes/no as value. Ansible silently converts
+        them to bool value so normalize it in module to yes/no.
+      release_summary: This is bugfix release.
+    fragments:
+    - 0.5.1.yml
+    - handle-yes-no-as-value.yml
+    release_date: '2026-09-27'

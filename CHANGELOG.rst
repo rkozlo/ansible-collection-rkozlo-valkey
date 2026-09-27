@@ -4,6 +4,19 @@ Ansible rkozlo.valkey collection changelog Release Notes
 
 .. contents:: Topics
 
+v0.5.1
+======
+
+Release Summary
+---------------
+
+This is bugfix release.
+
+Bugfixes
+--------
+
+- valkey_config - properly handle yes/no as value. Ansible silently converts them to bool value so normalize it in module to yes/no.
+
 v0.5.0
 ======
 
