@@ -6,7 +6,7 @@ Ansible collection for managing Valkey users, executing raw Valkey commands, and
 
 - Ansible >= 2.18
 - Python >= 3.13
-- Valkey server >= 7.2
+- Valkey server >= 7.2 <= 9.1
 - Python library valkey>=6.1.1,<7.0.0
 
 
@@ -22,6 +22,7 @@ ansible-galaxy collection install rkozlo.valkey
 - `rkozlo.valkey.valkey_exec` — execute arbitrary Valkey commands for advanced use cases.
 - `rkozlo.valkey.valkey_info` — retrieve Valkey server information and status.
 - `rkozlo.valkey.valkey_wait` — wait until Valkey will be in certain condition.
+- `rkozlo.valkey.valkey_config` - change server configs.
 
 ## Examples
 
@@ -67,11 +68,24 @@ ansible-galaxy collection install rkozlo.valkey
       - memory
 ```
 
+### Change server configs
+
+```yaml
+- name: Change server configs
+  rkozlo.valkey.valkey_config:
+    configs:
+      maxmemory: 100000
+      maxmemory-policy: volatile-ttl
+      save: 60 60
+      client-output-buffer-limit: "normal 1 1 1 slave 268435456 67108864 60 pubsub 33554432 8388608 60"
+```
+
 ## Notes
 
 - `valkey_exec` is intended for advanced users and executes the command directly through the Valkey client.
 - `valkey_exec` does not attempt to determine whether a command changed server state.
 - `valkey_user` supports append and reset modes, but some parameter combinations may require careful review of module behavior.
+- `valkey_config` will change mutable configs. If passed config is immutable and is different warning will appear(or fail if strict mode enabled)
 - The collection is under active development and may be updated after initial release.
 
 ## Testing
