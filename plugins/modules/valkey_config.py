@@ -212,8 +212,6 @@ class ValkeyConfig:
         for config, value in to_change_configs.items():
             if not self.module.check_mode:
                 self.client._execute('config_set', config, value)
-                if self.config_rewrite:
-                    self.client._execute('config_rewrite')
             diff.append(self.build_to_string(config, value))
         if self.config_rewrite and to_change_configs:
             if not self.module.check_mode:
