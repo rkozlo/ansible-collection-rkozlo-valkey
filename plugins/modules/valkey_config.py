@@ -81,27 +81,8 @@ EXAMPLES = r'''
       maxmemory: 100000
 '''
 RETURN = r'''
-diff:
-  description: List of changes that differs but can't be applied.
-  type: list
-  elements: dict
-  returned: on success
-  contains:
-    after:
-      description: Value after change.
-      type: str
-    before:
-      description: Value before change.
-      type: str
-    name:
-      description: Name of changed config.
-      type: str
-  sample:
-    - after: 100000
-      before: "0"
-      name: "maxmemory"
 immutable:
-  description: List of changes that differs been aplied.
+  description: List of changes that differ but can't be applied.
   type: list
   elements: dict
   returned: on success
@@ -119,6 +100,26 @@ immutable:
     - after: 2
       before: "1"
       name: io-threads
+diff:
+  description: List of configs that differed and were applied.
+  type: list
+  elements: dict
+  returned: on success
+  contains:
+    after:
+      description: Value after change.
+      type: str
+    before:
+      description: Value before change.
+      type: str
+    name:
+      description: Name of changed config.
+      type: str
+  sample:
+    - after: 100000
+      before: "0"
+      name: "maxmemory"
+
 '''
 
 from ansible.module_utils.basic import AnsibleModule
