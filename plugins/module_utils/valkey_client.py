@@ -1,3 +1,6 @@
+import traceback
+
+from ansible.module_utils.basic import missing_required_lib
 from ansible.module_utils.common.text.converters import to_native
 
 try:
@@ -5,16 +8,18 @@ try:
     from valkey.cluster import ValkeyCluster
     import valkey.exceptions
     HAS_VALKEY_PACKAGE = True
+    VALKEY_IMPORT_ERROR = None
 except ImportError:
     HAS_VALKEY_PACKAGE = False
+    VALKEY_IMPORT_ERROR = traceback.format_exc()
     Valkey = None
-    valkey_exceptions = None
+    ValkeyCluster = None
 
 
 class ValkeyClient:
-    def __init__(self, module=None, cluster=False, host='localhost', port=6379, username='default', password=None, **client_kwargs):
+    def __init__(self, module, cluster=False, host='localhost', port=6379, username='default', password=None, **client_kwargs):
         if not HAS_VALKEY_PACKAGE:
-            module.fail_json(msg="valkey Python package is required. Install with: pip install valkey")
+            module.fail_json(msg=missing_required_lib('valkey'), exception=VALKEY_IMPORT_ERROR)
         self.module = module
         self.login_host = host
         self.login_port = port

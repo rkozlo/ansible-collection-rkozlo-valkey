@@ -1,0 +1,2 @@
+minor_changes:
+  - valkey client - use standard ``missing_required_lib`` message with import traceback when the ``valkey`` Python package is missing.

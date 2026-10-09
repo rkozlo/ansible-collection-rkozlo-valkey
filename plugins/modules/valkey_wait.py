@@ -156,11 +156,8 @@ from ansible_collections.rkozlo.valkey.plugins.module_utils.valkey_client import
 
 try:
     import valkey.exceptions
-    HAS_VALKEY_PACKAGE = True
 except ImportError:
-    HAS_VALKEY_PACKAGE = False
-    Valkey = None
-    valkey_exceptions = None
+    pass  # Missing package is reported by ValkeyClient.
 
 
 class ValkeyWait:

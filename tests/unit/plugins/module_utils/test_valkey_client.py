@@ -57,3 +57,13 @@ def test_acl_save_supported(valkey_client, mocker):
     assert valkey_client.aclsave_supported is True
     valkey_client.aclsave_supported
     valkey_client._execute.assert_called_once()
+
+
+def test_valkey_client_missing_package(mocker):
+    mock_module = mocker.MagicMock()
+    mock_module.fail_json.side_effect = SystemExit
+    mocker.patch('ansible_collections.rkozlo.valkey.plugins.module_utils.valkey_client.HAS_VALKEY_PACKAGE', False)
+
+    with pytest.raises(SystemExit):
+        ValkeyClient(module=mock_module)
+    assert 'valkey' in mock_module.fail_json.call_args.kwargs['msg']
