@@ -348,17 +348,16 @@ class ValkeyUser:
         for _entry in (passwords or []):
             target_passwords.append('+' + _entry)
         for _entry in (hashed_passwords or []):
-            target_hashes.append('+' + _entry)
+            target_hashes.append('+' + _entry.lower())
         return target_passwords, target_hashes
 
     def _normalize_passwords_and_hashes(self, passwords, hashed_passwords):
         result = []
-        if hashed_passwords:
-            result += hashed_passwords
-        if passwords:
-            for password in passwords:
-                if password not in result:
-                    result.append(hashlib.sha256(password.encode('utf-8')).hexdigest())
+        hashes = [h.lower() for h in (hashed_passwords or [])]
+        hashes += [hashlib.sha256(p.encode('utf-8')).hexdigest() for p in (passwords or [])]
+        for _hash in hashes:
+            if _hash not in result:
+                result.append(_hash)
         return result
 
     def _normalize_key_patterns(self, key_patterns):
