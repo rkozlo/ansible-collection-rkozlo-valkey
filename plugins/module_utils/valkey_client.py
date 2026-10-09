@@ -89,12 +89,12 @@ class ValkeyClient:
         if not self._client:
             try:
                 self.client.ping()
-            except valkey.exceptions.ConnectionError as e:
-                self.module.fail_json(
-                    msg=f"Failed to connect to Valkey at {self.login_host}:{self.login_port} with user '{self.login_username}': {to_native(e)}")
             except valkey.exceptions.AuthenticationError as e:
                 self.module.fail_json(
                     msg=f"Authentication failed for user '{self.login_username}' when connecting to Valkey: {to_native(e)}")
+            except valkey.exceptions.ConnectionError as e:
+                self.module.fail_json(
+                    msg=f"Failed to connect to Valkey at {self.login_host}:{self.login_port} with user '{self.login_username}': {to_native(e)}")
             except Exception as e:
                 self.module.fail_json(msg=f"Unexpected error: {to_native(e)}")
 

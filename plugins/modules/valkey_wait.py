@@ -204,6 +204,9 @@ class ValkeyWait:
     def _wait_for_state(self):
         try:
             self.client.client.ping()
+        # Subclass of ConnectionError. Waiting will not fix wrong credentials so fail early.
+        except valkey.exceptions.AuthenticationError as e:
+            self.module.fail_json(msg=f"Authentication failed for user '{self.client.login_username}': {to_native(e)}")
         except valkey.exceptions.ConnectionError:
             return 'down'
         except valkey.exceptions.ResponseError:
