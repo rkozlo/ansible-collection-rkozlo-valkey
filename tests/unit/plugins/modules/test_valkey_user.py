@@ -317,15 +317,15 @@ def test_normalize_invalid_commands(valkey_user, mocker, commands):
     valkey_user.module.fail_json.assert_called_once()
 
 
-@pytest.mark.parametrize("commands, current, expected", [
+@pytest.mark.parametrize("current, commands, expected", [
     ([], [], False),
-    ([], [], False),
-    (['+get'], [], True),
+    (['+get'], [], False),
+    ([], ['+get'], True),
     (['+get'], ['+get'], False),
     (['+get', '+set'], ['+get'], False),
     (['+get'], ['+get', '+set'], True),
 ])
-def test_channels_needs_update(valkey_user, commands, current, expected,):
+def test_commands_needs_update(valkey_user, current, commands, expected,):
     valkey_user._commands = current
     result = valkey_user._commands_needs_update(commands)
 
