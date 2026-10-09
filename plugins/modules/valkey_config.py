@@ -19,7 +19,7 @@ extends_documentation_fragment:
   - rkozlo.valkey.valkey_client_common
 description:
   - This module allows you to change valkey configs.
-  - Module is fully idempotent and will try change configs only if differs.
+  - Module will try change configs only if differs.
   - Module knows what settings are immutable and will not try to change them
     generating errors in server.
 attributes:
@@ -31,11 +31,19 @@ attributes:
     support: full
   idempotent:
     description: When run twice in a row outside check mode, with the same arguments, the second invocation indicates no change.
-    support: full
+    support: partial
+    details: Only when values are passed in the form described in O(configs).
 options:
   configs:
     description:
       - Config dictionary module will ensure has proper value set.
+      - Values are compared with the current value returned by C(CONFIG GET) as strings.
+      - Only limited normalization is done before comparing.
+      - Sizes like V(100mb) or V(1G) are converted to bytes. C(K), C(M), C(G) are multiples of 1000
+        and C(KB), C(MB), C(GB) are multiples of 1024, same as in Valkey. Units are case insensitive.
+      - Booleans are converted to V(yes) and V(no).
+      - Any other value is compared exactly. To stay idempotent pass it in the same form C(CONFIG GET) returns,
+        for example lowercase V(allkeys-lru), or V(slave) instead of V(replica) in C(client-output-buffer-limit).
     required: true
     type: dict
   strict:

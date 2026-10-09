@@ -86,6 +86,7 @@ ansible-galaxy collection install rkozlo.valkey
 - `valkey_exec` does not attempt to determine whether a command changed server state.
 - `valkey_user` supports append and reset modes, but some parameter combinations may require careful review of module behavior.
 - `valkey_config` will change mutable configs. If passed config is immutable and is different warning will appear(or fail if strict mode enabled)
+- `valkey_config` normalizes only sizes (e.g. `100mb`) and booleans before comparing. Other values must be passed in the form returned by `CONFIG GET` to stay idempotent.
 - The collection is under active development and may be updated after initial release.
 
 ## Testing
