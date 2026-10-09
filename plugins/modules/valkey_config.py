@@ -163,7 +163,10 @@ class ValkeyConfig:
         """Load configs for used server version."""
         from ansible_collections.rkozlo.valkey.plugins.module_utils.valkey_config_ver import CONFIGS
         version_key = f'{self.client.version["major"]}.{self.client.version["minor"]}'
-        self._version_config = CONFIGS[version_key]
+        try:
+            self._version_config = CONFIGS[version_key]
+        except KeyError:
+            self.module.fail_json(msg=f"Valkey {version_key} is not supported yet. Supported: {', '.join(CONFIGS)}")
 
     def get_diff_runtime_configs(self, configs):
         different = {}
@@ -180,7 +183,10 @@ class ValkeyConfig:
         return different
 
     def is_immutable_attr(self, name):
-        return self.version_config[name]['immutable']
+        try:
+            return self.version_config[name]['immutable']
+        except KeyError:
+            self.module.fail_json(msg=f"Config {name} is not known for Valkey {self.client.version['full']}.")
 
     def extract_immutable_attributes(self, configs):
         immutable = {}

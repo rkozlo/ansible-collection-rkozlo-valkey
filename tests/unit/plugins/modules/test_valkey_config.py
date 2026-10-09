@@ -56,3 +56,19 @@ def test_get_diff_runtime_configs(valkey_config, settings, expected):
 def test_normalize_values(valkey_config, value, expected):
     result = valkey_config.normalize_value(value)
     assert result == expected
+
+
+def test_load_configs_unsupported_version(valkey_config):
+    valkey_config.module.fail_json.side_effect = SystemExit
+    valkey_config.client.version = {'full': '99.0.0', 'major': 99, 'minor': 0, 'patch': 0}
+    with pytest.raises(SystemExit):
+        valkey_config._load_configs()
+    assert 'Valkey 99.0 is not supported yet' in valkey_config.module.fail_json.call_args.kwargs['msg']
+
+
+def test_is_immutable_attr_unknown_config(valkey_config):
+    valkey_config.module.fail_json.side_effect = SystemExit
+    valkey_config.client.version = {'full': '9.1.2', 'major': 9, 'minor': 1, 'patch': 2}
+    with pytest.raises(SystemExit):
+        valkey_config.is_immutable_attr('not-existing-config')
+    assert 'Config not-existing-config is not known' in valkey_config.module.fail_json.call_args.kwargs['msg']
