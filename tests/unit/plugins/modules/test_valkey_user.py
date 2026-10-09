@@ -258,6 +258,14 @@ def test_normalize_wrong_categories(valkey_user, mocker, categories):
     valkey_user.module.fail_json.assert_called_once()
 
 
+@pytest.mark.parametrize("categories", [None, []])
+def test_normalize_categories_empty_skips_acl_cat(valkey_user, mocker, categories):
+    acl_cat = mocker.patch.object(valkey_user, '_get_available_categories')
+
+    assert valkey_user._normalize_categories(categories) == []
+    acl_cat.assert_not_called()
+
+
 @pytest.mark.parametrize("key_patterns,expected", [
     ([], []),
     ([''], ['~']),

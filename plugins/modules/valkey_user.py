@@ -515,9 +515,9 @@ class ValkeyUser:
             self.module.fail_json(msg="Acl save not supported on server. Configure aclfile.")
 
     def _normalize_categories(self, categories):
-        available_categories = self._get_available_categories()
         if not categories:
             return []
+        available_categories = self._get_available_categories()
         errors = []
         normalized = []
 
