@@ -902,12 +902,25 @@
         that:
           - result.result['channels'] == ['&chatbot*', '&php*', '&web']
 
-    - name: Alter test user with channels add third channel -idemportency
+    - name: Alter test user with channels add third channel - idemportency
       rkozlo.valkey.valkey_user:
         name: test_user
         state: present
         channels:
           - "web"
+      register: result
+
+    - name: Check result
+      ansible.builtin.assert:
+        that:
+          - result.changed == False
+
+    - name: Alter test user with channels add third channel trailing with & - idemportency
+      rkozlo.valkey.valkey_user:
+        name: test_user
+        state: present
+        channels:
+          - "&web"
       register: result
 
     - name: Check result
@@ -1060,7 +1073,7 @@
           - result.changed == True
           - result.executed_statements[0]['params']['categories'] == ['+@read']
 
-    - name: Check user actual channels
+    - name: Check user actual categories
       rkozlo.valkey.valkey_exec:
         command: ACL_GETUSER
         params:
@@ -1099,7 +1112,7 @@
           - result.changed == True
           - result.executed_statements[0]['params']['categories'] == ['+@connection']
 
-    - name: Check user actual channels
+    - name: Check user actual categories
       rkozlo.valkey.valkey_exec:
         command: ACL_GETUSER
         params:

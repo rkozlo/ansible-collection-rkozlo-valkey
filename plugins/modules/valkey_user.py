@@ -393,8 +393,8 @@ class ValkeyUser:
 
         return normalized
 
-    def _normalize_channels_for_comparison(self, channels):
-        """Remove & prefix from channel patterns. Used only to compare."""
+    def _normalize_channels(self, channels):
+        """Remove & prefix from channel patterns. Client adds it itself."""
         if not channels:
             return []
 
@@ -491,7 +491,7 @@ class ValkeyUser:
 
     def _channels_needs_update(self, channels, reset_channels):
         desired_channels = channels or []
-        preformated_self_channels = self._normalize_channels_for_comparison(self.channels)
+        preformated_self_channels = self._normalize_channels(self.channels)
         if set(desired_channels) == set(preformated_self_channels):
             return False
         if not reset_channels:
@@ -575,6 +575,7 @@ class ValkeyUser:
         categories = self._normalize_categories(categories)
         key_patterns = self._normalize_key_patterns(key_patterns)
         commands = self._normalize_commands(commands)
+        channels = self._normalize_channels(channels)
 
         params = self._build_acl_params(enabled, target_passwords, target_hashes, commands, key_patterns, channels, categories)
         executed_statements.append({
@@ -600,6 +601,7 @@ class ValkeyUser:
         categories = self._normalize_categories(categories)
         key_patterns = self._normalize_key_patterns(key_patterns)
         commands = self._normalize_commands(commands)
+        channels = self._normalize_channels(channels)
 
         if not self._needs_update(enabled, passwords, hashed_passwords, commands, key_patterns, channels,
                                   categories, reset_passwords, reset_key_patterns, reset_channels):

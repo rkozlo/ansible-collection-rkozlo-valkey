@@ -341,13 +341,49 @@ def test_commands_needs_update(valkey_user, current, commands, expected,):
     (False, ['allchannels', '&data.?'], ['&allchannels'], True),
     (True, ['data.?'], ['&allchannels', '&data.?'], True),
     (False, ['data.?'], ['&allchannels', '&data.?'], False),
-    (False, ['&data.?'], ['&allchannels', '&data.?'], True),
 ])
 def test_channels_needs_update(valkey_user, reset_channels, channels, current, expected,):
     valkey_user._channels = current
     result = valkey_user._channels_needs_update(channels, reset_channels)
 
     assert result is expected
+
+
+@pytest.mark.parametrize("channels, expected", [
+    (None, []),
+    ([], []),
+    (['data.?'], ['data.?']),
+    (['&data.?'], ['data.?']),
+    (['&&data.?'], ['&data.?']),
+])
+def test_normalize_channels(valkey_user, channels, expected):
+    assert valkey_user._normalize_channels(channels) == expected
+
+
+def test_create_strips_channel_prefix(valkey_user):
+    valkey_user.create(enabled=True, passwords=None, hashed_passwords=None, commands=None,
+                       key_patterns=None, channels=['&data.?', 'other'], categories=None, save_acls=False)
+
+    valkey_user.client._execute.assert_any_call(
+        'acl_setuser', username='test_user', enabled=True, reset_passwords=False,
+        reset_keys=False, reset_channels=False, channels=['data.?', 'other'])
+
+
+def test_update_prefixed_channel_is_idempotent(valkey_user, mocker):
+    mocker.patch.object(valkey_user, '_load')
+    valkey_user._exists = True
+    valkey_user._enabled = True
+    valkey_user._passwords = []
+    valkey_user._commands = []
+    valkey_user._key_patterns = []
+    valkey_user._channels = ['&data.?']
+    valkey_user._categories = ['-@all']
+
+    changed = valkey_user.update(enabled=True, passwords=None, hashed_passwords=None, commands=None,
+                                 key_patterns=None, channels=['&data.?'], categories=None, reset_passwords=False,
+                                 reset_key_patterns=False, reset_channels=False, save_acls=False)
+
+    assert changed is False
 
 
 def test_needs_update_enabled_change_from_false_to_true(valkey_user, mocker):
