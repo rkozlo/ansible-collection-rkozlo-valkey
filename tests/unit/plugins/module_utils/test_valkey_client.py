@@ -115,3 +115,16 @@ def test_execute_success(connected_client):
 
     assert connected_client._execute('get', 'key') == 'value'
     connected_client._client.get.assert_called_once_with('key')
+
+
+@pytest.mark.parametrize("cluster,db,should_fail", [
+    (True, 1, True),
+    (True, 0, False),
+    (False, 1, False),
+])
+def test_valkey_client_db_in_cluster(mocker, cluster, db, should_fail):
+    mock_module = mocker.MagicMock()
+
+    ValkeyClient(mock_module, cluster, db=db)
+
+    assert mock_module.fail_json.called is should_fail

@@ -20,6 +20,8 @@ class ValkeyClient:
     def __init__(self, module, cluster=False, host='localhost', port=6379, username='default', password=None, **client_kwargs):
         if not HAS_VALKEY_PACKAGE:
             module.fail_json(msg=missing_required_lib('valkey'), exception=VALKEY_IMPORT_ERROR)
+        if cluster and client_kwargs.get('db'):
+            module.fail_json(msg="login_db is not supported in cluster mode. Valkey cluster uses only database 0.")
         self.module = module
         self.login_host = host
         self.login_port = port

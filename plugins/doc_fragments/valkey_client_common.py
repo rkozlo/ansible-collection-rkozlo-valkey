@@ -16,7 +16,9 @@ options:
     type: int
     default: 6379
   login_db:
-    description: Database number
+    description:
+      - Database number.
+      - Not supported together with O(cluster=true). Valkey cluster uses only database 0 at this moment.
     type: int
   login_user:
     description: Username for authentication
@@ -30,7 +32,13 @@ options:
     type: dict
     default: {}
   cluster:
-    description: Whether to connect in cluster mode or not. Currently only passing one host is supported.
+    description:
+      - Whether to connect in cluster mode or not.
+      - Only one node can be passed with O(login_host) and O(login_port). Other nodes are discovered from it.
+      - Server commands used by modules like C(CONFIG GET), C(CONFIG SET), C(CONFIG REWRITE), C(ACL SETUSER),
+        C(ACL SAVE) and C(INFO) are not sent to all nodes. They are executed only on a single node of the cluster,
+        which is not always the one passed in O(login_host).
+      - To manage configs or users on every node, connect to each node separately with O(cluster=false).
     type: bool
     default: false
     version_added: 0.3.0

@@ -1,0 +1,2 @@
+minor_changes:
+  - all modules - fail with a clear message when ``login_db`` is used together with ``cluster=true``.
