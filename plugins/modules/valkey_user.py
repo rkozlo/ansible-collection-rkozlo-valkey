@@ -413,7 +413,7 @@ class ValkeyUser:
         available_commands = self._get_available_commands()
         for command in commands:
             if not command.startswith(('+', '-')):
-                errors.append(f'Invalid command {command}. Should starts with + or -.')
+                errors.append(f'Invalid command {command}. Should start with + or -.')
                 continue
 
             sign = command[0]
@@ -526,7 +526,7 @@ class ValkeyUser:
             if not cat_rule.startswith(('+', '-')):
                 errors.append(f"Invalid category rule '{cat_rule}': must start with + or -")
 
-            # Prereserve sign
+            # Preserve sign
             sign = cat_rule[0]
             rest = cat_rule[1:]
 

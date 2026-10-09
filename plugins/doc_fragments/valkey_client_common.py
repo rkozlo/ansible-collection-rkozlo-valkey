@@ -30,7 +30,7 @@ options:
     type: dict
     default: {}
   cluster:
-    description: Wheter connect in cluster mode or not. Currently only passing one host is supported.
+    description: Whether to connect in cluster mode or not. Currently only passing one host is supported.
     type: bool
     default: false
     version_added: 0.3.0

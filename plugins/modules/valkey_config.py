@@ -51,15 +51,15 @@ options:
       - How module should handle immutable attributes.
       - When C(false) immutable attributes will be logged in return and only proper warning appears.
       - When C(true) config that is immutable and can't be changed during runtime module will fail.
-      - In strict mode module will fail early if any immutable config was set. Without changing anythin.
+      - In strict mode module will fail early if any immutable config was set. Without changing anything.
     type: bool
     default: false
   config_rewrite:
     description:
       - Whether module will execute V(CONFIG REWRITE) or not.
-      - Module will rewrite only if runtime configs differs.
-      - If at the moment of executing module there is incosistency between
-        file and runtime it will not determine.
+      - Module will rewrite only if runtime configs differ.
+      - Module does not detect inconsistency between config file and runtime values.
+        If they already differ before running the module, no rewrite is done.
     type: bool
     default: false
 '''
@@ -76,7 +76,7 @@ EXAMPLES = r'''
       save: 60 60
       client-output-buffer-limit: "normal 1 1 1 slave 268435456 67108864 60 pubsub 33554432 8388608 60"
 
-- name: Trying change immutable config - successfull with warning
+- name: Trying change immutable config - successful with warning
   rkozlo.valkey.valkey_config:
     configs:
       logfile: new_file
@@ -86,10 +86,12 @@ EXAMPLES = r'''
     configs:
       logfile: new_file
     strict: true
+
 - name: Change config and execute config rewrite on change
   rkozlo.valkey.valkey_config:
     configs:
       maxmemory: 100000
+    config_rewrite: true
 '''
 RETURN = r'''
 immutable:
