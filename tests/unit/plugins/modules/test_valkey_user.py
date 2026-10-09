@@ -215,10 +215,18 @@ def test_passwords_needs_update(valkey_user, mocker, compare_result, reset_passw
     (True, ['~*'], [], True),                       # Not equal reset
     (False, ['~*'], ['~*'], False),                 # Equal
     (True, ['~*'], ['~*'], False),                  # Equal reset
-    (False, ['~*', 'cache*'], ['~*'], True),        # Not equal
+    (False, ['~*', 'cache*'], ['~*'], False),       # Covered by ~*
     (True, ['~*', 'cache*'], ['~*'], True),         # Not equal reset
     (False, ['cache*'], ['~*', 'cache*'], False),   # Subset part of
     (True, ['cache*'], ['~*', 'cache*'], True),     # Subset port of reset
+    (False, ['%R~x', '%W~x'], ['~x'], False),       # Merged by server
+    (True, ['%R~x', '%W~x'], ['~x'], False),        # Merged by server reset
+    (False, ['~x', '%R~x'], ['~x'], False),         # Redundant input
+    (False, ['%R~x'], ['~x'], False),               # Read already granted
+    (False, ['~x'], ['%R~x'], True),                # Write missing
+    (True, ['%R~x'], ['~x'], True),                 # Remove write reset
+    (False, ['%R~x'], ['%R~*'], False),             # Covered by %R~*
+    (False, ['%W~x'], ['%R~*'], True),              # Not covered by %R~*
 ])
 def test_key_patterns_needs_update(valkey_user, key_patterns, current, reset_key_patterns, expected,):
     valkey_user._key_patterns = current
@@ -276,7 +284,12 @@ def test_normalize_categories_empty_skips_acl_cat(valkey_user, mocker, categorie
     (['%R~cache*', '%R~db*'], ['%R~cache*', '%R~db*']),
     (['%RW~cache*'], ['~cache*']),
     (['~cache*'], ['~cache*']),
-    (['%rw~web:*', '%w~db:*', '%r~mon:*'], ['~web:*', '%W~db:*', '%R~mon:*'])
+    (['%rw~web:*', '%w~db:*', '%r~mon:*'], ['~web:*', '%W~db:*', '%R~mon:*']),
+    (['%R~x', '%W~x'], ['~x']),
+    (['~x', '%R~x'], ['~x']),
+    (['%W~x', 'y', '%R~x'], ['~x', '~y']),
+    (['%WR~x'], ['~x']),
+    (['%R~*', '%W~x'], ['%R~*', '%W~x']),
 ])
 def test_normalize_key_patterns_correct_patterns(valkey_user, key_patterns, expected):
     result = valkey_user._normalize_key_patterns(key_patterns)
@@ -296,6 +309,52 @@ def test_normalize_key_patterns_wrong_patterns(valkey_user, key_patterns):
     valkey_user._normalize_key_patterns(key_patterns)
 
     valkey_user.module.fail_json.assert_called_once()
+
+
+@pytest.mark.parametrize("key_patterns", [
+    ['~*', '~x'],
+    ['x', '*'],
+    ['%R~*', '%W~*', '~x'],
+])
+def test_normalize_key_patterns_all_keys_with_others(valkey_user, key_patterns):
+    valkey_user.module.fail_json.side_effect = SystemExit
+
+    with pytest.raises(SystemExit):
+        valkey_user._normalize_key_patterns(key_patterns)
+    assert 'already covers all keys' in valkey_user.module.fail_json.call_args.kwargs['msg']
+
+
+@pytest.mark.parametrize("key_patterns, current, expected", [
+    (['~x'], [], ['~x']),
+    (['~x'], ['~x'], []),
+    (['~x', '~y'], ['~x'], ['~y']),
+    (['%W~x'], ['%R~x'], ['%W~x']),
+    (['~x'], ['~*'], []),
+    (['~x'], ['%R~*'], ['~x']),
+])
+def test_missing_key_patterns(valkey_user, key_patterns, current, expected):
+    valkey_user._key_patterns = current
+
+    assert valkey_user._missing_key_patterns(key_patterns) == expected
+
+
+def test_update_append_sends_only_missing_key_patterns(valkey_user, mocker):
+    mocker.patch.object(valkey_user, '_load')
+    valkey_user._exists = True
+    valkey_user._enabled = False
+    valkey_user._passwords = []
+    valkey_user._commands = []
+    valkey_user._key_patterns = ['~*']
+    valkey_user._channels = []
+    valkey_user._categories = ['-@all']
+
+    changed = valkey_user.update(enabled=True, passwords=None, hashed_passwords=None, commands=None,
+                                 key_patterns=['~x'], channels=None, categories=None, reset_passwords=False,
+                                 reset_key_patterns=False, reset_channels=False, save_acls=False)
+
+    assert changed is True
+    params = valkey_user.client._execute.call_args.kwargs
+    assert 'keys' not in params
 
 
 @pytest.mark.parametrize("commands, expected", [

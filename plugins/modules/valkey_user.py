@@ -76,11 +76,15 @@ options:
     required: false
   key_patterns:
     description:
-      - List of key patters for the user.
+      - List of key patterns for the user.
       - By default it works in append mode.
       - To save this as state use O(reset_key_patterns).
-      - Idempotency for now is flawed. Normally it will be idempotent but when on input redundant patterns it can break it.
-        For example passing ['~test:*', '%R~test:*'] %R is redundand and module for now will detect this as changed.
+      - Patterns without prefix are treated as read/write, same as I(~).
+      - Access for the same pattern is merged the same way Valkey does. For example I(%R~test:*) and I(%W~test:*)
+        are the same as I(~test:*).
+      - Patterns are compared as text. Glob patterns covering each other like I(~test:*) and I(~test:a) are not merged.
+      - In append mode access can only be added. To remove access use O(reset_key_patterns).
+      - I(~*) can't be passed together with other patterns, it already covers all keys.
     type: list
     elements: str
     required: false
@@ -154,7 +158,7 @@ EXAMPLES = r'''
     name: test_user
     passwords:
       - test_pass
-    hashed_password:
+    hashed_passwords:
       - 10a6e6cc8311a3e2bcc09bf6c199adecd5dd59408c343e926b129c4914f3cb01
 
 - name: Create user with passwords in reset mode
@@ -269,6 +273,9 @@ from ansible_collections.rkozlo.valkey.plugins.module_utils.valkey_client import
 
 executed_statements = []
 
+KEY_PATTERN_RE = re.compile(r'^(%RW~|%WR~|%R~|%W~|~)?(.*)$', re.IGNORECASE)
+FULL_KEY_ACCESS = frozenset('RW')
+
 
 class ValkeyUser:
     def __init__(self, module, client, name):
@@ -360,37 +367,57 @@ class ValkeyUser:
                 result.append(_hash)
         return result
 
-    def _normalize_key_patterns(self, key_patterns):
-        '''Key patterns needs to normalize for idempotency.'''
-        '''Valkey stores them as upper case so prefixes will be uppered.'''
-        '''Possible prefixes:
+    def _key_patterns_to_map(self, key_patterns):
+        """Merge key patterns into {pattern: access} the same way Valkey does.
+
+        Possible prefixes:
             %R~  - read
             %W~  - write
             ~    - read/write
             %RW~ - just alias to ~
             %WR~ - as above
-            When not explicity passed prefix pattern will be prefixed with ~ just as default for valkey.
-        '''
-        if not key_patterns:
-            return []
-        pattern = re.compile(r'^(%RW~|%WR~|%R~|%W~|~)?(.*)$', re.IGNORECASE)
-        normalized = []
-
-        for key in key_patterns:
-            match = pattern.match(key)
-            prefix, rest = match.groups()
-
-            if prefix and prefix.upper() in ('%RW~', '%WR~'):
-                normalized.append(f"~{rest}")
-            elif prefix:
-                normalized.append(f"{prefix.upper()}{rest}")  # Normalize case
-            elif key.startswith('%'):
+        When not explicity passed pattern is read/write just as default for valkey.
+        Same pattern with different access is merged, so %R~x and %W~x is ~x.
+        """
+        patterns = {}
+        for key in (key_patterns or []):
+            prefix, rest = KEY_PATTERN_RE.match(key).groups()
+            if prefix is None and key.startswith('%'):
                 self.module.fail_json(msg=f'Invalid key prefix: {key}. Example correct prefixes %R~ %RW~ ~')
+            if prefix is None or prefix == '~':
+                access = FULL_KEY_ACCESS
             else:
-                # No prefix passed. Fill with RW
-                normalized.append(f"~{key}")
+                access = frozenset(prefix.upper()[1:-1])
+            patterns[rest] = patterns.get(rest, frozenset()) | access
+        return patterns
 
-        return normalized
+    @staticmethod
+    def _map_to_key_patterns(patterns):
+        """Build shortest form of patterns from {pattern: access}."""
+        result = []
+        for pattern, access in patterns.items():
+            if access == FULL_KEY_ACCESS:
+                result.append(f"~{pattern}")
+            else:
+                result.append(f"%{''.join(access)}~{pattern}")
+        return result
+
+    def _normalize_key_patterns(self, key_patterns):
+        patterns = self._key_patterns_to_map(key_patterns)
+        if patterns.get('*') == FULL_KEY_ACCESS and len(patterns) > 1:
+            self.module.fail_json(msg='Key pattern ~* already covers all keys. Valkey does not accept other patterns together with it.')
+        return self._map_to_key_patterns(patterns)
+
+    def _missing_key_patterns(self, key_patterns):
+        """Return patterns which access is not already granted. ~* or %R~* covers access to every pattern."""
+        desired = self._key_patterns_to_map(key_patterns)
+        current = self._key_patterns_to_map(self.key_patterns)
+        all_keys_access = current.get('*', frozenset())
+        missing = {
+            pattern: access for pattern, access in desired.items()
+            if not access <= (current.get(pattern, frozenset()) | all_keys_access)
+        }
+        return self._map_to_key_patterns(missing)
 
     def _normalize_channels(self, channels):
         """Remove & prefix from channel patterns. Client adds it itself."""
@@ -480,13 +507,9 @@ class ValkeyUser:
         return True
 
     def _key_patterns_needs_update(self, key_patterns, reset_key_patterns):
-        desired_patterns = key_patterns or []
-        if set(desired_patterns) == set(self.key_patterns):
-            return False
-        if not reset_key_patterns:
-            if set(desired_patterns).issubset(set(self.key_patterns)):
-                return False
-        return True
+        if reset_key_patterns:
+            return self._key_patterns_to_map(key_patterns) != self._key_patterns_to_map(self.key_patterns)
+        return bool(self._missing_key_patterns(key_patterns))
 
     def _channels_needs_update(self, channels, reset_channels):
         desired_channels = channels or []
@@ -605,6 +628,10 @@ class ValkeyUser:
         if not self._needs_update(enabled, passwords, hashed_passwords, commands, key_patterns, channels,
                                   categories, reset_passwords, reset_key_patterns, reset_channels):
             return False
+
+        # In append mode send only missing patterns. Valkey rejects any pattern added after ~*.
+        if not reset_key_patterns:
+            key_patterns = self._missing_key_patterns(key_patterns)
 
         params = self._build_acl_params(enabled, target_passwords, target_hashes, commands, key_patterns,
                                         channels, categories, reset_passwords, reset_key_patterns, reset_channels)

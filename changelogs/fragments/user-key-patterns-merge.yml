@@ -1,0 +1,5 @@
+bugfixes:
+  - valkey_user - merge access of the same key pattern the same way Valkey does (for example ``%R~x`` and ``%W~x`` is ``~x``). Such patterns are now idempotent.
+  - valkey_user - in append mode do not send key patterns already covered by ``~*``, which Valkey rejects.
+minor_changes:
+  - valkey_user - fail early when ``~*`` is passed together with other key patterns.
