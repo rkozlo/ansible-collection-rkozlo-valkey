@@ -1,0 +1,5 @@
+breaking_changes:
+  - valkey_config - return value ``diff`` was renamed to ``changed_configs``. ``diff`` is reserved by Ansible for diff mode.
+minor_changes:
+  - valkey_config - support diff mode. With ``--diff`` before and after values of changed configs are shown.
+  - valkey_config - ``after`` in ``changed_configs`` and ``immutable`` is now always a string.

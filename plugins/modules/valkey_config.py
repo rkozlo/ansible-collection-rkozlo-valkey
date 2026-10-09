@@ -26,6 +26,9 @@ attributes:
   check_mode:
     description: Supports check_mode.
     support: full
+  diff_mode:
+    description: Returns before and after values of changed configs.
+    support: full
   idempotent:
     description: When run twice in a row outside check mode, with the same arguments, the second invocation indicates no change.
     support: full
@@ -97,11 +100,13 @@ immutable:
       description: Name of changed config.
       type: str
   sample:
-    - after: 2
-      before: "1"
-      name: io-threads
-diff:
-  description: List of configs that differed and were applied.
+    - after: "new_file"
+      before: ""
+      name: logfile
+changed_configs:
+  description:
+    - List of configs that differed and were applied.
+    - Before version 0.6.0 it was returned as C(diff) which collided with Ansible diff mode.
   type: list
   elements: dict
   returned: on success
@@ -116,10 +121,10 @@ diff:
       description: Name of changed config.
       type: str
   sample:
-    - after: 100000
+    - after: "100000"
       before: "0"
       name: "maxmemory"
-
+  version_added: 0.6.0
 '''
 
 from ansible.module_utils.basic import AnsibleModule
@@ -203,10 +208,10 @@ class ValkeyConfig:
         self.validate_passed_params()
         diff_configs = self.get_diff_runtime_configs(configs)
         changed = False
-        diff = []
+        changed_configs = []
         cant_change = []
         if not diff_configs:
-            return changed, diff, cant_change
+            return changed, changed_configs, cant_change
         to_change_configs, immutable = self.extract_immutable_attributes(diff_configs)
 
         if immutable:
@@ -219,7 +224,7 @@ class ValkeyConfig:
         for config, value in to_change_configs.items():
             if not self.module.check_mode:
                 self.client._execute('config_set', config, value)
-            diff.append(self.build_to_string(config, value))
+            changed_configs.append(self.build_to_string(config, value))
         if self.config_rewrite and to_change_configs:
             if not self.module.check_mode:
                 self.client._execute('config_rewrite')
@@ -227,13 +232,19 @@ class ValkeyConfig:
         for config, value in immutable.items():
             cant_change.append(self.build_to_string(config, value))
 
-        return changed, diff, cant_change
+        return changed, changed_configs, cant_change
+
+    def build_diff(self, changed_configs):
+        return {
+            'before': {c['name']: c['before'] for c in changed_configs},
+            'after': {c['name']: c['after'] for c in changed_configs},
+        }
 
     def build_to_string(self, setting, value):
         return {
             'name': setting,
             'before': self.config[setting],
-            'after': value,
+            'after': str(value),
         }
 
     def normalize_value(self, value):
@@ -275,8 +286,11 @@ def main():
 
     valkey_config = ValkeyConfig(module, client, strict, config_rewrite, configs)
 
-    changed, diff, immutable = valkey_config.set_configs(configs)
-    module.exit_json(changed=changed, diff=diff, immutable=immutable)
+    changed, changed_configs, immutable = valkey_config.set_configs(configs)
+    result = dict(changed=changed, changed_configs=changed_configs, immutable=immutable)
+    if module._diff:
+        result['diff'] = valkey_config.build_diff(changed_configs)
+    module.exit_json(**result)
 
 
 if __name__ == '__main__':

@@ -72,3 +72,31 @@ def test_is_immutable_attr_unknown_config(valkey_config):
     with pytest.raises(SystemExit):
         valkey_config.is_immutable_attr('not-existing-config')
     assert 'Config not-existing-config is not known' in valkey_config.module.fail_json.call_args.kwargs['msg']
+
+
+def test_set_configs_returns_changed_and_immutable(valkey_config):
+    valkey_config.client.version = {'full': '9.1.2', 'major': 9, 'minor': 1, 'patch': 2}
+    valkey_config._config = {'maxmemory': '0', 'logfile': '', 'appendonly': 'no'}
+
+    changed, changed_configs, immutable = valkey_config.set_configs({'maxmemory': '1kb', 'logfile': 'new_file', 'appendonly': False})
+
+    assert changed is True
+    assert changed_configs == [{'name': 'maxmemory', 'before': '0', 'after': '1024'}]
+    assert immutable == [{'name': 'logfile', 'before': '', 'after': 'new_file'}]
+    valkey_config.client._execute.assert_called_once_with('config_set', 'maxmemory', 1024)
+
+
+def test_build_diff(valkey_config):
+    changed_configs = [
+        {'name': 'maxmemory', 'before': '0', 'after': '1024'},
+        {'name': 'appendonly', 'before': 'no', 'after': 'yes'},
+    ]
+
+    assert valkey_config.build_diff(changed_configs) == {
+        'before': {'maxmemory': '0', 'appendonly': 'no'},
+        'after': {'maxmemory': '1024', 'appendonly': 'yes'},
+    }
+
+
+def test_build_diff_no_changes(valkey_config):
+    assert valkey_config.build_diff([]) == {'before': {}, 'after': {}}

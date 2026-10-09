@@ -212,6 +212,24 @@
       - result.failed is true
       - result.msg == 'Config rewrite passed but not supported on this instance. Config file is not defined.'
 
+- name: Change config in diff mode
+  rkozlo.valkey.valkey_config:
+    configs:
+      maxmemory: 102mb
+  register: result
+  diff: true
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed is true
+      - result.changed_configs | length == 1
+      - result.changed_configs[0].name == 'maxmemory'
+      - result.changed_configs[0].before == '104857600'
+      - result.changed_configs[0].after == '106954752'
+      - result.diff.before.maxmemory == '104857600'
+      - result.diff.after.maxmemory == '106954752'
+
 - name: Set default configs
   rkozlo.valkey.valkey_config:
     configs:
