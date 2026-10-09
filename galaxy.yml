@@ -5,8 +5,8 @@ version: 0.5.1
 readme: README.md
 authors:
   - Rafał Kozłowski <rafalkozlowski07@gmail.com>
-    
-description: Ansible collection for Valkey for managing Valkey users and executing raw commands.
+
+description: Ansible collection for Valkey for managing users and configs, executing raw commands, gathering info and waiting for server state.
 tags:
   - database
   - valkey
