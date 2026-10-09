@@ -38,6 +38,17 @@ def test_check_save_acls_failure(valkey_user, aclsave_supported, save_acl):
     valkey_user.module.fail_json.assert_called_once()
 
 
+@pytest.mark.parametrize("save_acls", [True, False])
+def test_create_acl_save_only_when_requested(valkey_user, save_acls):
+    valkey_user.client.aclsave_supported = True
+    valkey_user.create(enabled=True, passwords=None, hashed_passwords=None, commands=None,
+                       key_patterns=None, channels=None, categories=None, save_acls=save_acls)
+
+    executed = [c.args[0] for c in valkey_user.client._execute.call_args_list]
+    assert 'acl_setuser' in executed
+    assert ('acl_save' in executed) is save_acls
+
+
 @pytest.mark.parametrize("passwords,hashed_passwords,expected_pass,expected_hash", [
     ([], [], [], []),
     (['test'], [], ['+test'], []),

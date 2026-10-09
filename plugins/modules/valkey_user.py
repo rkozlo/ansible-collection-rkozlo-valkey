@@ -512,11 +512,7 @@ class ValkeyUser:
         return not set(desired).issubset(current)
 
     def _check_save_acls(self, save_acls):
-        if not save_acls:
-            return "a"
-        if self.client.aclsave_supported:
-            return "b"
-        else:
+        if save_acls and not self.client.aclsave_supported:
             self.module.fail_json(msg="Acl save not supported on server. Configure aclfile.")
 
     def _normalize_categories(self, categories):
@@ -573,7 +569,7 @@ class ValkeyUser:
     def create(self, enabled, passwords, hashed_passwords, commands,
                key_patterns, channels, categories, save_acls):
         # Early fail if server doesn't support.
-        self._check_save_acls
+        self._check_save_acls(save_acls)
 
         target_passwords, target_hashes = self._extract_passwords(passwords, hashed_passwords)
         categories = self._normalize_categories(categories)
@@ -589,7 +585,8 @@ class ValkeyUser:
             executed_statements.append({'action': 'acl_save'})
         if not self.module.check_mode:
             self.client._execute('acl_setuser', **params)
-            self.client._execute('acl_save')
+            if save_acls:
+                self.client._execute('acl_save')
 
         return True
 
@@ -597,7 +594,7 @@ class ValkeyUser:
                key_patterns, channels, categories, reset_passwords,
                reset_key_patterns, reset_channels, save_acls):
         # Early fail if server doesn't support.
-        self._check_save_acls
+        self._check_save_acls(save_acls)
 
         target_passwords, target_hashes = self._extract_passwords(passwords, hashed_passwords)
         categories = self._normalize_categories(categories)
@@ -626,7 +623,7 @@ class ValkeyUser:
 
     def delete(self, save_acls):
         # Early fail if server doesn't support.
-        self._check_save_acls
+        self._check_save_acls(save_acls)
 
         args = [self.name]
         executed_statements.append({

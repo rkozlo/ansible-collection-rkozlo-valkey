@@ -1,0 +1,3 @@
+bugfixes:
+  - valkey_user - fail early when ``save_acls`` is enabled but the server has no aclfile configured (check was never executed).
+  - valkey_user - do not execute ``ACL SAVE`` on user creation when ``save_acls`` is false.
