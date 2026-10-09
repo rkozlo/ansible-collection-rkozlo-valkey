@@ -179,13 +179,11 @@ class ValkeyConfig:
         for config, value in configs.items():
             normalized = self.normalize_value(value)
             try:
-                if str(normalized) != str(self.config[config]):
-                    different[config] = normalized
-                continue
+                current = self.config[config]
             except KeyError:
-                self.module.fail_json(msg=f'Configs {config} is not known in this version')
-            except Exception:
-                self.module.fail_json(msg=f'Unexpected error occured with {config}.')
+                self.module.fail_json(msg=f'Config {config} is not known by this Valkey server.')
+            if str(normalized) != str(current):
+                different[config] = normalized
         return different
 
     def is_immutable_attr(self, name):

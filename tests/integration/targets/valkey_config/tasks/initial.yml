@@ -162,7 +162,7 @@
 - name: Check result
   ansible.builtin.assert:
     that:
-      - result.msg == "Configs dummy is not known in this version"
+      - result.msg == "Config dummy is not known by this Valkey server."
 
 - name: Change configs with testing normalization
   rkozlo.valkey.valkey_config:

@@ -100,3 +100,12 @@ def test_build_diff(valkey_config):
 
 def test_build_diff_no_changes(valkey_config):
     assert valkey_config.build_diff([]) == {'before': {}, 'after': {}}
+
+
+def test_get_diff_runtime_configs_unknown_config(valkey_config):
+    valkey_config.module.fail_json.side_effect = SystemExit
+    valkey_config._config = {'maxmemory': '0'}
+
+    with pytest.raises(SystemExit):
+        valkey_config.get_diff_runtime_configs({'dummy': 'value'})
+    assert valkey_config.module.fail_json.call_args.kwargs['msg'] == 'Config dummy is not known by this Valkey server.'
