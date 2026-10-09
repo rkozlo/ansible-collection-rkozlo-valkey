@@ -104,11 +104,22 @@ class ValkeyClient:
                 self.module.fail_json(msg=f"Unexpected error: {to_native(e)}")
 
     def _execute(self, cmd_name, *args, **kwargs):
+        self._connect()
+        method = getattr(self.client, cmd_name, None)
+        if not callable(method):
+            self.module.fail_json(msg=f"Command '{cmd_name}' is not available in valkey-py {valkey.__version__}.")
         try:
-            self._connect()
-            method = getattr(self.client, cmd_name)
             return method(*args, **kwargs)
         except valkey.exceptions.ResponseError as e:
             self.module.fail_json(msg=f"Error executing command '{cmd_name}': {to_native(e)}")
-        except AttributeError as e:
-            self.module.fail_json(msg=f"Command '{cmd_name}' not supported by this Valkey version: {to_native(e)}")
+        except valkey.exceptions.TimeoutError as e:
+            self.module.fail_json(
+                msg=f"Command '{cmd_name}' timed out: {to_native(e)}. Consider raising socket_timeout in client_kwargs.")
+        except valkey.exceptions.ConnectionError as e:
+            self.module.fail_json(
+                msg=f"Lost connection to {self.login_host}:{self.login_port} while executing '{cmd_name}': {to_native(e)}")
+        except valkey.exceptions.ValkeyError as e:
+            self.module.fail_json(msg=f"Valkey error executing command '{cmd_name}': {to_native(e)}")
+        # Mostly wrong args passed to valkey_exec.
+        except TypeError as e:
+            self.module.fail_json(msg=f"Invalid arguments for '{cmd_name}': {to_native(e)}")
