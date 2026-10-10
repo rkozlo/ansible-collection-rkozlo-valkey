@@ -271,6 +271,44 @@
     that:
       - result.changed is false
 
+
+- name: Change config with rewrite supported
+  rkozlo.valkey.valkey_config:
+    configs:
+      maxmemory: 10002
+    config_rewrite: true
+    login_port: 6380
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed is true
+
+- name: Fetch config content
+  ansible.builtin.slurp:
+    src: /var/lib/valkey-6380/valkey.conf
+    armor: false
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - "result.content | regex_search('maxmemory 10002') | length > 0"
+
+- name: Change config with rewrite supported - idempotency
+  rkozlo.valkey.valkey_config:
+    configs:
+      maxmemory: 10002
+    config_rewrite: true
+    login_port: 6380
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+
 - name: Set default configs
   rkozlo.valkey.valkey_config:
     configs:
@@ -279,3 +317,10 @@
       appendonly: false
       maxmemory-policy: noeviction
       save: 3600 1 300 100 60 10000
+
+- name: Set default configs
+  rkozlo.valkey.valkey_config:
+    configs:
+      maxmemory: 0
+    login_port: 6380
+    config_rewrite: true
