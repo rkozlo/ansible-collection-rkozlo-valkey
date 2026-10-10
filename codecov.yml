@@ -1,0 +1,22 @@
+codecov:
+  notify:
+    after_n_builds: 30
+
+coverage:
+  status:
+    project:
+      default:
+        informational: true
+    patch:
+      default:
+        informational: true
+
+comment:
+  layout: "condensed_header, condensed_files, condensed_footer"
+  after_n_builds: 30
+
+ignore:
+  - "tests/**"
+
+fixes:
+  - "/ansible_collections/rkozlo/valkey/::"
