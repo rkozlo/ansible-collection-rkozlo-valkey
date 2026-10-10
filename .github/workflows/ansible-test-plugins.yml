@@ -54,8 +54,18 @@ jobs:
           ansible-core-version: ${{ matrix.ansible }}
           testing-type: units
           coverage: always
-          codecov-token: ${{ secrets.CODECOV_TOKEN }}
-          
+
+      # The action's built-in upload is skipped because it looks for the report
+      # before generating it. Upload manually until upstream PR #128 is released:
+      # https://github.com/ansible-community/ansible-test-gh-action/pull/128
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f  # v7.0.0
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          working-directory: ansible_collections/rkozlo/valkey
+          files: tests/output/reports/coverage=units.xml
+          flags: units
+          fail_ci_if_error: true
 
   integration:
     runs-on: ubuntu-latest
@@ -94,9 +104,20 @@ jobs:
           ansible-core-version: ${{ matrix.ansible }}
           testing-type: integration
           coverage: always
-          codecov-token: ${{ secrets.CODECOV_TOKEN }}
           pre-test-cmd: |
             printf '%s\n' \
               'secret_hidden: ${{ matrix.secret_hidden }}' \
               'valkey_version: "${{ matrix.valkey_version }}"' \
               > ./tests/integration/targets/setup_valkey/vars/main.yml
+
+      # The action's built-in upload is skipped because it looks for the report
+      # before generating it. Upload manually until upstream PR #128 is released:
+      # https://github.com/ansible-community/ansible-test-gh-action/pull/128
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f  # v7.0.0
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          working-directory: ansible_collections/rkozlo/valkey
+          files: tests/output/reports/coverage=integration.xml
+          flags: integration
+          fail_ci_if_error: true
