@@ -83,7 +83,19 @@ def test_set_configs_returns_changed_and_immutable(valkey_config):
     assert changed is True
     assert changed_configs == [{'name': 'maxmemory', 'before': '0', 'after': '1024'}]
     assert immutable == [{'name': 'logfile', 'before': '', 'after': 'new_file'}]
-    valkey_config.client._execute.assert_called_once_with('config_set', 'maxmemory', 1024)
+    valkey_config.client._execute.assert_called_once_with('config_set', 'maxmemory', '1024')
+
+
+def test_set_configs_only_immutable_skips_config_set(valkey_config):
+    valkey_config.client.version = {'full': '9.1.2', 'major': 9, 'minor': 1, 'patch': 2}
+    valkey_config._config = {'logfile': ''}
+
+    changed, changed_configs, immutable = valkey_config.set_configs({'logfile': 'new_file'})
+
+    assert changed is False
+    assert changed_configs == []
+    assert immutable == [{'name': 'logfile', 'before': '', 'after': 'new_file'}]
+    valkey_config.client._execute.assert_not_called()
 
 
 def test_build_diff(valkey_config):

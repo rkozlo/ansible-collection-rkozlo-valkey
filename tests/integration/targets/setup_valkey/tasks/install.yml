@@ -33,11 +33,17 @@
     - 7001
     - 7002
 
+- name: Create config file for valkey
+  ansible.builtin.file:
+    path: /var/lib/valkey-6380/valkey.conf
+    state: touch
+    mode: 600
+
 - name: Start server
   ansible.builtin.command: valkey-server --aclfile valkey.acl --daemonize yes --pidfile /var/run/valkey.pid --dir /var/lib/valkey-6379/
 
 - name: Start another server
-  ansible.builtin.command: valkey-server --aclfile valkey.acl --daemonize yes --port 6380 --pidfile /var/run/valkey2.pid --dir /var/lib/valkey-6380/
+  ansible.builtin.command: valkey-server /var/lib/valkey-6380/valkey.conf --aclfile valkey.acl --daemonize yes --port 6380 --pidfile /var/run/valkey2.pid --dir /var/lib/valkey-6380/
 
 - name: Start cluster
   block:

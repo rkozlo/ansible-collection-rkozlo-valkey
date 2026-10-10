@@ -236,7 +236,8 @@ class ValkeyWait:
                 for cond in self.conditions.keys():
                     # Some feilds will appear only when server will reach certain step.
                     # For example replica will have field master_link_status only if not primary.
-                    self._set_statistics(cond, info_result.get(cond))
+                    value = info_result.get(cond) if info_result is not None else None
+                    self._set_statistics(cond, value)
             if not self.return_failed():
                 return True
             sleep(self.interval)

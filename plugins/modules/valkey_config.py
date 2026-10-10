@@ -229,13 +229,17 @@ class ValkeyConfig:
                 self.module.warn(f'''configs: {immutable} are immutable and can't be changed during runtime.''')
         if to_change_configs:
             changed = True
-        for config, value in to_change_configs.items():
+            args = [
+                str(item)
+                for config, value in to_change_configs.items()
+                for item in (config, value)
+            ]
             if not self.module.check_mode:
-                self.client._execute('config_set', config, value)
-            changed_configs.append(self.build_to_string(config, value))
-        if self.config_rewrite and to_change_configs:
-            if not self.module.check_mode:
-                self.client._execute('config_rewrite')
+                self.client._execute('config_set', *args)
+                if self.config_rewrite:
+                    self.client._execute('config_rewrite')
+            for config, value in to_change_configs.items():
+                changed_configs.append(self.build_to_string(config, value))
 
         for config, value in immutable.items():
             cant_change.append(self.build_to_string(config, value))

@@ -230,9 +230,96 @@
       - result.diff.before.maxmemory == '104857600'
       - result.diff.after.maxmemory == '106954752'
 
+- name: Change multiple configs at once
+  rkozlo.valkey.valkey_config:
+    configs:
+      maxmemory: 10002
+      maxmemory-policy: allkeys-random
+      save: 1 1
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed is true
+
+- name: Check actual value
+  rkozlo.valkey.valkey_exec:
+    command: config_get
+    args:
+      - maxmemory
+      - maxmemory-policy
+      - save
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.result['maxmemory'] == "10002"
+      - result.result['maxmemory-policy'] == "allkeys-random"
+      - result.result['save'] == "1 1"
+
+- name: Change multiple configs at once - idempotency
+  rkozlo.valkey.valkey_config:
+    configs:
+      maxmemory: 10002
+      maxmemory-policy: allkeys-random
+      save: 1 1
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+
+
+- name: Change config with rewrite supported
+  rkozlo.valkey.valkey_config:
+    configs:
+      maxmemory: 10002
+    config_rewrite: true
+    login_port: 6380
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed is true
+
+- name: Fetch config content
+  ansible.builtin.slurp:
+    src: /var/lib/valkey-6380/valkey.conf
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - "result.content | b64decode | regex_search('maxmemory 10002') | length > 0"
+
+- name: Change config with rewrite supported - idempotency
+  rkozlo.valkey.valkey_config:
+    configs:
+      maxmemory: 10002
+    config_rewrite: true
+    login_port: 6380
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+
 - name: Set default configs
   rkozlo.valkey.valkey_config:
     configs:
       client-output-buffer-limit: "normal 0 0 0 slave 268435456 67108864 60 pubsub 33554432 8388608 60"
       maxmemory: 0
       appendonly: false
+      maxmemory-policy: noeviction
+      save: 3600 1 300 100 60 10000
+
+- name: Set default configs
+  rkozlo.valkey.valkey_config:
+    configs:
+      maxmemory: 0
+    login_port: 6380
+    config_rewrite: true
