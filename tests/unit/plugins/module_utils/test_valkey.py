@@ -3,7 +3,7 @@ from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
 import pytest
-from ansible_collections.rkozlo.valkey.plugins.module_utils.valkey import to_bytes_data
+from ansible_collections.rkozlo.valkey.plugins.module_utils.valkey import to_bytes_data, get_main_conn_kwargs
 
 
 @pytest.mark.parametrize("value,expected", [
@@ -23,3 +23,40 @@ from ansible_collections.rkozlo.valkey.plugins.module_utils.valkey import to_byt
 def test_normalize_data_values(value, expected):
     result = to_bytes_data(value)
     assert result == expected
+
+
+def test_get_main_conn_kwargs_default_db(mocker):
+    mock_module = mocker.MagicMock()
+    mock_module.params = {
+        'login_host': 'localhost',
+        'login_port': 6379,
+        'login_db': 0,
+        'login_user': 'default',
+        'login_password': 'pass',
+    }
+    result = get_main_conn_kwargs(mock_module)
+    assert result == {
+        'host': 'localhost',
+        'port': 6379,
+        'username': 'default',
+        'password': 'pass',
+    }
+
+
+def test_get_main_conn_kwargs_custom_db(mocker):
+    mock_module = mocker.MagicMock()
+    mock_module.params = {
+        'login_host': 'localhost',
+        'login_port': 6379,
+        'login_db': 1,
+        'login_user': 'default',
+        'login_password': 'pass',
+    }
+    result = get_main_conn_kwargs(mock_module)
+    assert result == {
+        'host': 'localhost',
+        'port': 6379,
+        'db': 1,
+        'username': 'default',
+        'password': 'pass',
+    }
