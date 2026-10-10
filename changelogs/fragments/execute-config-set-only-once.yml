@@ -1,0 +1,2 @@
+minor_changes:
+  - valkey_config - instead of calling CONFIG SET for each config send it only once passing all of the settings atomically.
