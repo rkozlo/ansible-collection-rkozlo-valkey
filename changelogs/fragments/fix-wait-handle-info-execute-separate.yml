@@ -1,0 +1,2 @@
+bugfixes:
+  - valkey_wait - handle separately info command execute. Using predefined method it could fail even though module should wait.

@@ -196,7 +196,16 @@ class ValkeyWait:
         return statistics
 
     def _fetch_info(self):
-        return self.client._execute('info')
+        try:
+            return self.client.client.info()
+        # No permission so makes no sense to burn timeout. Just fail early.
+        except valkey.exceptions.NoPermissionError as e:
+            self.module.fail_json(msg=f"User '{self.client.login_username}' is not allowrd to run INFO: {to_native(e)}")
+        # Covers server timeout. Ping checks this but meantime it could be gone.
+        except valkey.exceptions.ConnectionError:
+            return None
+        except Exception as e:
+            self.module.fail_json(msg="Unexpected exception %s" % to_native(e))
 
     def _wait_for_state(self):
         try:
