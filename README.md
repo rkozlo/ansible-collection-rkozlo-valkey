@@ -1,4 +1,6 @@
-# valkey
+# Valkey collection for Ansible
+
+[![Plugins CI](https://github.com/rkozlo/ansible-collection-rkozlo-valkey/workflows/Plugins%20CI/badge.svg)](https://github.com/rkozlo/ansible-collection-rkozlo-valkey/actions?query=workflow%3A"Plugins+CI) [![codecov](https://codecov.io/gh/rkozlo/ansible-collection-rkozlo-valkey/graph/badge.svg?token=O3ENISHA6V)](https://codecov.io/gh/rkozlo/ansible-collection-rkozlo-valkey)
 
 Ansible collection for managing Valkey users, executing raw Valkey commands, and gathering Valkey server information.
 
