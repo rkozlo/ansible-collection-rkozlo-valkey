@@ -53,7 +53,9 @@ jobs:
         with:
           ansible-core-version: ${{ matrix.ansible }}
           testing-type: units
-          coverage: never
+          coverage: always
+          codecov-token: ${{ secrets.CODECOV_TOKEN }}
+          
 
   integration:
     runs-on: ubuntu-latest
@@ -91,7 +93,8 @@ jobs:
         with:
           ansible-core-version: ${{ matrix.ansible }}
           testing-type: integration
-          coverage: never
+          coverage: always
+          codecov-token: ${{ secrets.CODECOV_TOKEN }}
           pre-test-cmd: |
             printf '%s\n' \
               'secret_hidden: ${{ matrix.secret_hidden }}' \
