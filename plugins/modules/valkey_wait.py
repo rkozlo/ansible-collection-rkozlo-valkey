@@ -225,11 +225,9 @@ class ValkeyWait:
             if self.conditions and self.statistics['state']['is_met']:
                 info_result = self._fetch_info()
                 for cond in self.conditions.keys():
-                    try:
-                        value = info_result[cond]
-                    except KeyError:
-                        self.module.fail_json(msg=f'Passed condition {cond} was not found in INFO result')
-                    self._set_statistics(cond, value)
+                    # Some feilds will appear only when server will reach certain step.
+                    # For example replica will have field master_link_status only if not primary.
+                    self._set_statistics(cond, info_result.get(cond))
             if not self.return_failed():
                 return True
             sleep(self.interval)

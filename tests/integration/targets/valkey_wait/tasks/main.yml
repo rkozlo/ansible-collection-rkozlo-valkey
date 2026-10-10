@@ -150,5 +150,3 @@
   ansible.builtin.assert:
     that:
       - result.failed == true
-      - >
-        result.msg == "Passed condition dummy_info was not found in INFO result"
