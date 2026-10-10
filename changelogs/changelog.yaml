@@ -67,3 +67,63 @@ releases:
     - 0.5.1.yml
     - handle-yes-no-as-value.yml
     release_date: '2026-09-27'
+  0.6.0:
+    changes:
+      breaking_changes:
+      - valkey_config - return value ``diff`` was renamed to ``changed_configs``.
+        ``diff`` is reserved by Ansible for diff mode.
+      bugfixes:
+      - valkey client - do not report internal ``AttributeError`` as an unsupported
+        command. Unknown commands now report the missing method in valkey-py.
+      - valkey client - handle timeouts, lost connections and other Valkey errors
+        during command execution with a clear message instead of a traceback.
+      - valkey client - report authentication failures as such instead of a generic
+        connection error.
+      - valkey_config - remove redundant config rewrite. Execute only once if any
+        config has changed.
+      - valkey_exec - report invalid arguments for a command with a clear message
+        instead of a traceback.
+      - valkey_user - accept uppercase ``hashed_passwords`` by lowercasing them and
+        fix deduplication of passwords and hashes.
+      - valkey_user - do not execute ``ACL SAVE`` on user creation when ``save_acls``
+        is false.
+      - valkey_user - fail early when ``save_acls`` is enabled but the server has
+        no aclfile configured (check was never executed).
+      - valkey_user - strip leading ``&`` from ``channels``. Previously it was sent
+        as ``&&pattern`` and the module was never idempotent for such channels.
+      - valkey_wait - fail immediately on authentication error instead of retrying
+        until timeout.
+      - valkey_wait - handle separately info command execute. Using predefined method
+        it could fail even though module should wait.
+      - valkey_wait - remove KeyError exception in lookup at info response. This could
+        cause early module fail.
+      minor_changes:
+      - all modules - fail with a clear message when ``login_db`` is used together
+        with ``cluster=true``.
+      - valkey client - use standard ``missing_required_lib`` message with import
+        traceback when the ``valkey`` Python package is missing.
+      - valkey_config - ``after`` in ``changed_configs`` and ``immutable`` is now
+        always a string.
+      - valkey_config - fail with a clear message instead of a traceback when the
+        server version or a config is not present in the supported configs table.
+      - valkey_config - instead of calling CONFIG SET for each config send it only
+        once passing all of the settings atomically.
+      - valkey_config - support diff mode. With ``--diff`` before and after values
+        of changed configs are shown.
+      release_summary: This is minor release of collection. Mostly bugfixes and improvements.
+    fragments:
+    - 0.6.0.yml
+    - cleanup-valkey-import-fallback.yml
+    - client-execute-error-handling.yml
+    - cluster-mode-docs.yml
+    - config-diff-mode.yml
+    - config-unsupported-version-msg.yml
+    - execute-config-set-only-once.yml
+    - fix-auth-error-handling.yml
+    - fix-user-acl-save.yml
+    - fix-user-channel-prefix.yml
+    - fix-user-password-hashes.yml
+    - fix-wait-handle-info-execute-separate.yml
+    - fix-wait-remove-key-error-on-info.yml
+    - remove-redundant-config-rewrite.yml
+    release_date: '2026-10-10'

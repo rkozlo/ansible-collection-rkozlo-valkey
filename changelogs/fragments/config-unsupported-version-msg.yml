@@ -1,2 +1,0 @@
-minor_changes:
-  - valkey_config - fail with a clear message instead of a traceback when the server version or a config is not present in the supported configs table.

@@ -1,3 +1,0 @@
-bugfixes:
-  - valkey client - report authentication failures as such instead of a generic connection error.
-  - valkey_wait - fail immediately on authentication error instead of retrying until timeout.

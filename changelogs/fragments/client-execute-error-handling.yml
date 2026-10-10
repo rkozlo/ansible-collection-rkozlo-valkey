@@ -1,4 +1,0 @@
-bugfixes:
-  - valkey client - handle timeouts, lost connections and other Valkey errors during command execution with a clear message instead of a traceback.
-  - valkey client - do not report internal ``AttributeError`` as an unsupported command. Unknown commands now report the missing method in valkey-py.
-  - valkey_exec - report invalid arguments for a command with a clear message instead of a traceback.
