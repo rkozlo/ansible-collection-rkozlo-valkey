@@ -1,2 +1,0 @@
-bugfixes:
-  - valkey_user - strip leading ``&`` from ``channels``. Previously it was sent as ``&&pattern`` and the module was never idempotent for such channels.

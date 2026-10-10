@@ -1,2 +1,0 @@
-bugfixes:
-  - valkey_config - remove redundant config rewrite. Execute only once if any config has changed.

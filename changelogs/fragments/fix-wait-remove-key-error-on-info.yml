@@ -1,2 +1,0 @@
-bugfixes:
-  - valkey_wait - remove KeyError exception in lookup at info response. This could cause early module fail.
