@@ -44,20 +44,48 @@ def test_valkey_client_version_caching(valkey_client, mocker):
     valkey_client._execute.assert_called_once_with('info', 'server')
 
 
+STANDALONE_INFO = {'valkey_version': '9.0.0', 'server_mode': 'standalone', 'config_file': ''}
+
+
+@pytest.mark.parametrize("info", [
+    {'valkey_version': '9.0.0', 'server_mode': 'standalone'},
+    {'valkey_version': '7.2.5', 'redis_mode': 'standalone'},
+])
+def test_server_mode(valkey_client, mocker, info):
+    mocker.patch.object(valkey_client, '_execute', return_value=info)
+
+    assert valkey_client.server_mode == 'standalone'
+    valkey_client.server_mode
+    valkey_client._execute.assert_called_once_with('info', 'server')
+
+
 def test_acl_save_not_supported(valkey_client, mocker):
-    mocker.patch.object(valkey_client, '_execute', return_value={'aclfile': ''})
+    mocker.patch.object(valkey_client, '_execute', side_effect=[STANDALONE_INFO, {'aclfile': ''}])
 
     assert valkey_client.aclsave_supported is False
     valkey_client.aclsave_supported
-    valkey_client._execute.assert_called_once()
+    valkey_client._execute.assert_called_with('config_get', args=['aclfile'])
+    assert valkey_client._execute.call_count == 2
 
 
 def test_acl_save_supported(valkey_client, mocker):
-    mocker.patch.object(valkey_client, '_execute', return_value={'aclfile': '/valkey.acl'})
+    mocker.patch.object(valkey_client, '_execute', side_effect=[STANDALONE_INFO, {'aclfile': '/valkey.acl'}])
 
     assert valkey_client.aclsave_supported is True
     valkey_client.aclsave_supported
-    valkey_client._execute.assert_called_once()
+    valkey_client._execute.assert_called_with('config_get', args=['aclfile'])
+    assert valkey_client._execute.call_count == 2
+
+
+def test_acl_save_sentinel_skips_config_get(valkey_client, mocker):
+    mocker.patch.object(valkey_client, '_execute',
+                        return_value={'valkey_version': '9.0.0', 'server_mode': 'sentinel', 'config_file': '/sentinel.conf'})
+
+    assert valkey_client.aclsave_supported is True
+    valkey_client.aclsave_supported
+    valkey_client._execute.assert_called_once_with('info', 'server')
+    valkey_client.module.warn.assert_called_once()
+    assert 'Sentinel' in valkey_client.module.warn.call_args.args[0]
 
 
 def test_valkey_client_missing_package(mocker):
