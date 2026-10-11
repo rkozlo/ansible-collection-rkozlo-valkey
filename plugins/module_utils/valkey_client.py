@@ -31,6 +31,7 @@ class ValkeyClient:
         self.cluster = cluster
         self._client = None
         self._version = None
+        self._server_mode = None
         self._aclsave_supported = None
         self._config_rewrite_supported = None
 
@@ -77,10 +78,24 @@ class ValkeyClient:
             'patch': splited[2],
         }
         self._config_rewrite_supported = config_file_exists
+        # Valkey 8.0+ reports server_mode, older versions only redis_mode.
+        self._server_mode = info.get('server_mode', info.get('redis_mode'))
+
+    @property
+    def server_mode(self):
+        if self._server_mode is None:
+            self._fetch_server_section()
+        return self._server_mode
 
     @property
     def aclsave_supported(self):
         if self._aclsave_supported is None:
+            # Sentinel has no CONFIG command, so aclfile can't be checked upfront.
+            # ACL SAVE itself fails with a clear error when aclfile is not configured.
+            if self.server_mode == 'sentinel':
+                self.module.warn("Valkey Sentinel mode detected. Assuming ACL SAVE is supported, but it may fail if 'aclfile' is not configured.")
+                self._aclsave_supported = True
+                return self._aclsave_supported
             result = self._execute('config_get', args=['aclfile'])
 
             self._aclsave_supported = True if result.get('aclfile', '') else False
