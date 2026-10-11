@@ -4,6 +4,19 @@ Ansible rkozlo.valkey collection changelog Release Notes
 
 .. contents:: Topics
 
+v0.6.1
+======
+
+Release Summary
+---------------
+
+This is bugfix release of the collection.
+
+Bugfixes
+--------
+
+- valkey_user - do not fail with ``unknown command 'config'`` when ``save_acls=true`` against Valkey Sentinel. Sentinel has no CONFIG command, so the aclfile check is skipped with a warning and ACL SAVE reports a missing aclfile itself.
+
 v0.6.0
 ======
 
