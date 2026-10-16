@@ -1,0 +1,6 @@
+minor_changes:
+  - >-
+    valkey_wait - condition values can be prefixed with a comparison operator,
+    for example ``role: "== master"`` or ``role: "==master"``. Supported operators are ``==``, ``!=``,
+    ``>``, ``>=``, ``<`` and ``<=``; ordering operators compare numbers. Multiple spaces in values
+    are reduced to one, and ``info`` reports the ``comparator`` used for every condition.

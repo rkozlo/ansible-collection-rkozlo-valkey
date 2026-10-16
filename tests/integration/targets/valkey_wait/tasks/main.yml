@@ -54,6 +54,50 @@
       role: master
       connected_slaves: 1
 
+- name: Check if replica is connected using comparison operators
+  rkozlo.valkey.valkey_wait:
+    conditions:
+      role: "!= slave"
+      connected_slaves: ">= 1"
+      loading: "<1"
+      uptime_in_seconds: "> 0"
+  register: result
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.info.role.comparator == '!='
+      - result.info.role.expected == 'slave'
+      - result.info.connected_slaves.comparator == '>='
+      - result.info.connected_slaves.expected == '1'
+      - result.info.loading.comparator == '<'
+      - result.info.loading.expected == '1'
+
+- name: Check if replication is up using comparison operators
+  rkozlo.valkey.valkey_wait:
+    login_port: 6380
+    conditions:
+      role: "==slave"
+      master_link_status: "!= down"
+      master_last_io_seconds_ago: "<= 60"
+
+- name: Check primary has not enough replicas - should fail
+  rkozlo.valkey.valkey_wait:
+    retries: 2
+    conditions:
+      connected_slaves: "> 1"
+  register: result
+  ignore_errors: true
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - >
+        result.msg == "Failed: connected_slaves"
+      - result.fail_waits.connected_slaves.last_value == 1
+
 - name: Preceed switchover
   vars:
     primary_port: 6380
@@ -150,3 +194,64 @@
   ansible.builtin.assert:
     that:
       - result.failed == true
+
+- name: Not equal on missing field - should fail
+  rkozlo.valkey.valkey_wait:
+    login_port: 6379
+    retries: 2
+    conditions:
+      master_link_status: "!= down"
+  register: result
+  ignore_errors: true
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - >
+        result.msg == "Failed: master_link_status"
+      - result.fail_waits.master_link_status.last_value is none
+
+- name: Numeric comparator on non numeric field - should fail
+  rkozlo.valkey.valkey_wait:
+    login_port: 6379
+    retries: 2
+    conditions:
+      role: "> 0"
+  register: result
+  ignore_errors: true
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - >
+        result.msg == "Failed: role"
+
+- name: Numeric comparator with non numeric value - should fail early
+  rkozlo.valkey.valkey_wait:
+    login_port: 6379
+    conditions:
+      connected_slaves: ">= many"
+  register: result
+  ignore_errors: true
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'requires numeric value' in result.msg"
+
+- name: Unsupported comparator - should fail early
+  rkozlo.valkey.valkey_wait:
+    login_port: 6379
+    conditions:
+      connected_slaves: "=> 0"
+  register: result
+  ignore_errors: true
+
+- name: Check result
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'Unsupported comparator' in result.msg"

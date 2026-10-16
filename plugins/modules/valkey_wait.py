@@ -58,6 +58,19 @@ options:
       - Conditions module will observe if are met.
       - >
         You can use any field described in INFO ex. {role: slave}.
+      - >
+        Value can be prefixed with comparison operator ex. {role: "== slave"} or {role: "==slave"}.
+        Without operator value is compared for equality.
+      - Value with operator must be quoted, otherwise YAML may parse it wrong.
+      - Spaces between words in value are reduced to single one.
+      - >
+        Value starting with any of C(=), C(!), C(<), C(>) is always treated as operator.
+        To compare such value literally prefix it with operator and space ex. "== =foo".
+      - Supported operators are C(==), C(!=), C(>), C(>=), C(<), C(<=).
+      - C(==) and C(!=) compare values as strings.
+      - >
+        C(>), C(>=), C(<), C(<=) compare values as numbers and require numeric value.
+        Condition is not met when current value is not a number.
     type: dict
     required: false
 '''
@@ -77,6 +90,18 @@ EXAMPLES = r'''
       role: master
       connected_slaves: 1
       replicas_waiting_psync: 0
+
+- name: Wait for at least two replicas to connect using comparison operators
+  rkozlo.valkey.valkey_wait:
+    conditions:
+      role: "== master"
+      connected_slaves: ">= 2"
+
+- name: Wait for replica lag to drop
+  rkozlo.valkey.valkey_wait:
+    conditions:
+      master_link_status: "!= down"
+      master_last_io_seconds_ago: "<= 5"
 
 - name: Wait for replication to sync
   rkozlo.valkey.valkey_wait:
@@ -107,6 +132,7 @@ info:
   type: dict
   sample:
     - - state:
+        comparator: "=="
         current_retry: 1
         expected: "ready"
         fail_retries: 0
@@ -115,6 +141,7 @@ info:
         last_fail_at: "2026-09-06T08:45:44.136185"
         last_value: "ready"
       - connected_slaves:
+        comparator: "=="
         current_retry: 1
         expected: 0
         fail_retries: 0
@@ -123,6 +150,7 @@ info:
         last_fail_at: null
         last_value: 0
       - role:
+        comparator: "=="
         current_retry: 1
         expected: "master"
         fail_retries: 0
@@ -137,6 +165,7 @@ fail_waits:
   type: dict
   sample:
     - state:
+      comparator: "=="
       current_retry: 5
       expected: "ready"
       fail_retries: 0
@@ -147,6 +176,8 @@ fail_waits:
 '''
 
 
+import operator
+import re
 from time import sleep
 from datetime import datetime
 from ansible.module_utils.basic import AnsibleModule
@@ -158,6 +189,43 @@ try:
     import valkey.exceptions
 except ImportError:
     pass  # Missing package is reported by ValkeyClient.
+
+
+def _to_number(value):
+    '''Convert value to int or float, None if not numeric.'''
+    if isinstance(value, bool):
+        return None
+    for convert in (int, float):
+        try:
+            return convert(str(value))
+        except ValueError:
+            pass
+    return None
+
+
+def _numeric(op):
+    '''Build comparator which compares values as numbers. Not numeric value is never met.'''
+    def compare(current, expected):
+        current, expected = _to_number(current), _to_number(expected)
+        return current is not None and expected is not None and op(current, expected)
+    return compare
+
+
+# Comparison functions used to decide if a condition is met, keyed by operator prefix.
+# INFO values and expected values may differ in type (ex. 1 vs '1'), so equality compares strings.
+COMPARATORS = {
+    '==': lambda current, expected: str(current) == str(expected),
+    '!=': lambda current, expected: str(current) != str(expected),
+    '>': _numeric(operator.gt),
+    '>=': _numeric(operator.ge),
+    '<': _numeric(operator.lt),
+    '<=': _numeric(operator.le),
+}
+NUMERIC_COMPARATORS = ('>', '>=', '<', '<=')
+DEFAULT_COMPARATOR = '=='
+# Leading run of operator characters is comparator, rest is expected value.
+# Whole run is captured, so typos like '=' or '=>' fail as unsupported instead of being compared literally.
+CONDITION_RE = re.compile(r'^\s*([=!<>]+)?\s*(.*?)\s*$', re.DOTALL)
 
 
 class ValkeyWait:
@@ -184,14 +252,17 @@ class ValkeyWait:
             statistics['state'] = {
                 **base_info,
                 'last_value': 'down',
+                'comparator': DEFAULT_COMPARATOR,
                 'expected': self.state,
             }
         if self.conditions:
             for condition, val in self.conditions.items():
+                comparator, expected = self._parse_condition(val)
                 statistics[condition] = {
                     **base_info,
                     'last_value': None,
-                    'expected': val,
+                    'comparator': comparator,
+                    'expected': expected,
                 }
         return statistics
 
@@ -243,9 +314,35 @@ class ValkeyWait:
             sleep(self.interval)
         return False
 
+    def _parse_condition(self, value):
+        '''Split condition value into comparator and expected value.
+        Leading operator characters are comparator, ex. '== master' or '==master'.
+        Words of expected value are joined with single space to avoid differences in spacing.
+        '''
+        comparator, expected = CONDITION_RE.match(str(value)).groups()
+        if comparator is None:
+            comparator = DEFAULT_COMPARATOR
+        elif comparator not in COMPARATORS:
+            self.module.fail_json(msg=f"Unsupported comparator '{comparator}'. Supported: {', '.join(COMPARATORS)}")
+        expected = ' '.join(expected.split())
+        # Waiting will never meet such condition, so fail early.
+        if comparator in NUMERIC_COMPARATORS and _to_number(expected) is None:
+            self.module.fail_json(msg=f"Comparator '{comparator}' requires numeric value, got '{expected}'")
+        return comparator, expected
+
+    def _compare(self, current, expected, comparator=DEFAULT_COMPARATOR):
+        '''Check if current value meets expected one using given comparator.'''
+        compare = COMPARATORS.get(comparator)
+        if compare is None:
+            self.module.fail_json(msg=f"Unsupported comparator '{comparator}'. Supported: {', '.join(COMPARATORS)}")
+        # Missing INFO field may appear later, so it is not met for any comparator.
+        if current is None:
+            return False
+        return compare(current, expected)
+
     def _set_statistics(self, name, returned):
         ts = datetime.now()
-        is_met = str(returned) == str(self.statistics[name]['expected'])
+        is_met = self._compare(returned, self.statistics[name]['expected'], self.statistics[name]['comparator'])
         self.statistics[name]['is_met'] = is_met
         self.statistics[name]['last_value'] = returned
         self.statistics[name]['last_check_at'] = ts
