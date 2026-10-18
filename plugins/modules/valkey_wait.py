@@ -23,6 +23,7 @@ description:
   - This module waits until valkey be in desired state.
   - Can be used as orchestrator for example waiting until RDB is loading
     AOF is rewriting, replica is still syncing, valkey is not ready to accept connections.
+  - Module works also in cluster mode.
 
 attributes:
   check_mode:
@@ -63,6 +64,7 @@ options:
         Without operator value is compared for equality.
       - Value with operator must be quoted, otherwise YAML may parse it wrong.
       - Spaces between words in value are reduced to single one.
+      - Version 0.7.0 introduced comparators.
       - >
         Value starting with any of C(=), C(!), C(<), C(>) is always treated as operator.
         To compare such value literally prefix it with operator and space ex. "== =foo".
@@ -73,6 +75,15 @@ options:
         Condition is not met when current value is not a number.
     type: dict
     required: false
+  cluster_conditions:
+    description:
+      - The same as O(conditions) but will correspond to C(CLUSTER INFO) result.
+      - Does not require O(cluster). Prefer not setting it, because in cluster mode the library
+        connects to the whole cluster when the client is created, so the module fails before
+        any condition is checked if the cluster is not formed yet.
+    type: dict
+    required: false
+    version_added: 0.7.0
 '''
 
 EXAMPLES = r'''
@@ -118,6 +129,11 @@ EXAMPLES = r'''
   rkozlo.valkey.valkey_wait:
     conditions:
       aof_rewrite_in_progress: 0
+
+- name: Wait cluster to be ready
+  rkozlo.valkey.valkey_wait:
+    cluster_conditions:
+      cluster_state: ok
 '''
 
 RETURN = r'''
@@ -236,11 +252,29 @@ class ValkeyWait:
         self.retries = module.params['retries']
         self.state = module.params['state']
         self.conditions = module.params['conditions']
+        self.cluster_conditions = module.params['cluster_conditions']
         self._retry = 0
         self.statistics = self._initialize_statistics()
 
     def _initialize_statistics(self):
         statistics = {}
+        if self.state:
+            state_condition = {
+                "state": self.state,
+            }
+            state_stats = self._single_statistics_block(state_condition)
+            # Patch stats with default vals for state.
+            state_stats['state']['last_value'] = 'down'
+            state_stats['state']['comparator'] = DEFAULT_COMPARATOR
+            statistics.update(state_stats)
+        if self.conditions:
+            statistics.update(self._single_statistics_block(self.conditions))
+        if self.cluster_conditions:
+            statistics.update(self._single_statistics_block(self.cluster_conditions))
+        return statistics
+
+    def _single_statistics_block(self, conditions):
+        result = {}
         base_info = {
             'current_retry': 0,
             'fail_retries': 0,
@@ -248,38 +282,42 @@ class ValkeyWait:
             'last_fail_at': None,
             'is_met': False
         }
-        if self.state:
-            statistics['state'] = {
+        for condition, val in conditions.items():
+            comparator, expected = self._parse_condition(val)
+            result[condition] = {
                 **base_info,
-                'last_value': 'down',
-                'comparator': DEFAULT_COMPARATOR,
-                'expected': self.state,
+                'last_value': None,
+                'comparator': comparator,
+                'expected': expected,
             }
-        if self.conditions:
-            for condition, val in self.conditions.items():
-                comparator, expected = self._parse_condition(val)
-                statistics[condition] = {
-                    **base_info,
-                    'last_value': None,
-                    'comparator': comparator,
-                    'expected': expected,
-                }
-        return statistics
+        return result
 
-    def _fetch_info(self):
+    def _fetch_info(self, cluster=False):
         try:
+            if cluster:
+                executed_command = "CLUSTER INFO"
+                # ValkeyCluster has only cluster_info(), plain Valkey only cluster('info').
+                # Plain client asks just the target node, so it works before cluster is formed.
+                if self.client.cluster:
+                    return self.client.client.cluster_info()
+                return self.client.client.cluster('info')
+            executed_command = "INFO"
             return self.client.client.info()
         # No permission so makes no sense to burn timeout. Just fail early.
         except valkey.exceptions.NoPermissionError as e:
-            self.module.fail_json(msg=f"User '{self.client.login_username}' is not allowrd to run INFO: {to_native(e)}")
+            self.module.fail_json(msg=f"User '{self.client.login_username}' is not allowed to run command {executed_command}: {to_native(e)}")
         # Covers server timeout. Ping checks this but meantime it could be gone.
         except valkey.exceptions.ConnectionError:
+            return None
+        # Pass any cluster error.
+        except valkey.exceptions.ClusterError:
             return None
         except Exception as e:
             self.module.fail_json(msg="Unexpected exception %s" % to_native(e))
 
     def _wait_for_state(self):
         try:
+            # State only trace valkey itself without cluster.
             self.client.client.ping()
         # Subclass of ConnectionError. Waiting will not fix wrong credentials so fail early.
         except valkey.exceptions.AuthenticationError as e:
@@ -301,18 +339,25 @@ class ValkeyWait:
 
             return_state = self._wait_for_state()
             self._set_statistics('state', return_state)
-            # State not ready so server will not be able to execute INFO command
-            if self.conditions and self.statistics['state']['is_met']:
-                info_result = self._fetch_info()
-                for cond in self.conditions.keys():
-                    # Some feilds will appear only when server will reach certain step.
-                    # For example replica will have field master_link_status only if not primary.
-                    value = info_result.get(cond) if info_result is not None else None
-                    self._set_statistics(cond, value)
+            # State not ready so server will not be able to execute INFO command.
+            if self.statistics['state']['is_met']:
+                if self.conditions:
+                    self._run_info_block(self.conditions)
+                if self.cluster_conditions:
+                    self._run_info_block(self.cluster_conditions, cluster=True)
             if not self.return_failed():
                 return True
             sleep(self.interval)
         return False
+
+    def _run_info_block(self, conditions, cluster=False):
+        '''Execute single info block and set its statistics.'''
+        info_result = self._fetch_info(cluster)
+        for cond in conditions.keys():
+            # Some fields will appear only when server will reach certain step.
+            # For example replica will have field master_link_status only if not primary.
+            value = info_result.get(cond) if info_result is not None else None
+            self._set_statistics(cond, value)
 
     def _parse_condition(self, value):
         '''Split condition value into comparator and expected value.
@@ -364,7 +409,8 @@ def main():
         interval=dict(type='int', default=1),
         retries=dict(type='int', default=60),
         state=dict(type='str', default='ready', choices=['ready']),
-        conditions=dict(type='dict', required=False)
+        conditions=dict(type='dict', required=False),
+        cluster_conditions=dict(type='dict', required=False),
     )
     module = AnsibleModule(
         argument_spec=argument_spec,
@@ -375,7 +421,6 @@ def main():
     client_kwargs = module.params.get('client_kwargs', {})
     conn_kwargs.update(client_kwargs)
     cluster = module.params['cluster']
-
     client = ValkeyClient(module, cluster, **conn_kwargs)
 
     valkey_wait = ValkeyWait(module, client)

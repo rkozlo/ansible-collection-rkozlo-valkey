@@ -255,3 +255,5 @@
     that:
       - result.failed == true
       - "'Unsupported comparator' in result.msg"
+
+- ansible.builtin.include_tasks: cluster_tests.yml

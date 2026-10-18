@@ -1,0 +1,53 @@
+---
+- name: Wait for cluster to be ready
+  rkozlo.valkey.valkey_wait:
+    cluster: true
+    login_port: 7000
+    cluster_conditions:
+      cluster_state: ok
+      cluster_slots_assigned: "== 16384"
+      cluster_known_nodes: ">= 3"
+  register: result
+
+- name: Check cluster wait result
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.info.cluster_state.comparator == '=='
+      - result.info.cluster_state.expected == 'ok'
+      - result.info.cluster_slots_assigned.comparator == '=='
+      - result.info.cluster_slots_assigned.expected == '16384'
+      - result.info.cluster_known_nodes.comparator == '>='
+      - result.info.cluster_known_nodes.expected == '3'
+
+- name: Wait for cluster without cluster client mode
+  rkozlo.valkey.valkey_wait:
+    login_port: 7000
+    cluster_conditions:
+      cluster_state: ok
+      cluster_known_nodes: '>= 3'
+  register: result
+
+- name: Check cluster wait result without cluster client mode
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.info.cluster_state.last_value == 'ok'
+      - result.info.cluster_known_nodes.last_value | int >= 3
+
+- name: Fail when cluster state is wrong
+  rkozlo.valkey.valkey_wait:
+    cluster: true
+    login_port: 7000
+    retries: 1
+    cluster_conditions:
+      cluster_state: "!= ok"
+  register: result
+  ignore_errors: true
+
+- name: Check failing cluster wait result
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - >-
+        result.msg == 'Failed: cluster_state'
