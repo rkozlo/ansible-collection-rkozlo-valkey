@@ -88,6 +88,51 @@ def test_fetch_info_falls_back_to_cluster_info_command_when_cluster_mode_not_con
     mock_client.client.info.assert_not_called()
 
 
+@pytest.mark.parametrize("cluster,cluster_client,method,command", [
+    (False, False, 'info', 'INFO'),
+    (True, True, 'cluster_info', 'CLUSTER INFO'),
+    (True, False, 'cluster', 'CLUSTER INFO'),
+])
+def test_fetch_info_no_permission_fails_with_command(valkey_wait, cluster, cluster_client, method, command):
+    valkey_wait.client.cluster = cluster_client
+    valkey_wait.client.login_username = 'test-user'
+    getattr(valkey_wait.client.client, method).side_effect = valkey.exceptions.NoPermissionError('permission denied')
+    valkey_wait.module.fail_json.side_effect = SystemExit
+
+    with pytest.raises(SystemExit):
+        valkey_wait._fetch_info(cluster=cluster)
+
+    valkey_wait.module.fail_json.assert_called_once()
+    message = valkey_wait.module.fail_json.call_args.kwargs['msg']
+    assert f"User 'test-user' is not allowed to run command {command}" in message
+    assert 'permission denied' in message
+
+
+@pytest.mark.parametrize("exception", [valkey.exceptions.ConnectionError, valkey.exceptions.ClusterError])
+@pytest.mark.parametrize("cluster,cluster_client,method", [
+    (False, False, 'info'),
+    (True, True, 'cluster_info'),
+    (True, False, 'cluster'),
+])
+def test_fetch_info_transient_errors_return_none(valkey_wait, exception, cluster, cluster_client, method):
+    valkey_wait.client.cluster = cluster_client
+    getattr(valkey_wait.client.client, method).side_effect = exception('temporary failure')
+
+    assert valkey_wait._fetch_info(cluster=cluster) is None
+    valkey_wait.module.fail_json.assert_not_called()
+
+
+def test_fetch_info_unexpected_error_fails(valkey_wait):
+    valkey_wait.client.client.info.side_effect = RuntimeError('unexpected failure')
+    valkey_wait.module.fail_json.side_effect = SystemExit
+
+    with pytest.raises(SystemExit):
+        valkey_wait._fetch_info()
+
+    valkey_wait.module.fail_json.assert_called_once()
+    assert valkey_wait.module.fail_json.call_args.kwargs['msg'] == 'Unexpected exception unexpected failure'
+
+
 # Extend with new operators as (value, comparator, expected).
 @pytest.mark.parametrize("value,comparator,expected", [
     ('master', '==', 'master'),
