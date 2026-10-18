@@ -2,10 +2,14 @@ from __future__ import (absolute_import, division, print_function)
 
 __metaclass__ = type
 
+import builtins
+import importlib
 import pytest
 from importlib.util import find_spec
+from unittest.mock import MagicMock
 import valkey.exceptions
 
+import ansible_collections.rkozlo.valkey.plugins.module_utils.valkey_client as valkey_client_module
 from ansible_collections.rkozlo.valkey.plugins.module_utils.valkey_client import ValkeyClient
 
 
@@ -96,6 +100,34 @@ def test_valkey_client_missing_package(mocker):
     with pytest.raises(SystemExit):
         ValkeyClient(module=mock_module)
     assert 'valkey' in mock_module.fail_json.call_args.kwargs['msg']
+
+
+def test_valkey_client_import_error(monkeypatch):
+    mock_module = MagicMock()
+    mock_module.fail_json.side_effect = SystemExit
+    original_import = builtins.__import__
+
+    def import_without_valkey(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == 'valkey' or name.startswith('valkey.'):
+            raise ImportError('simulated missing valkey package')
+        return original_import(name, globals, locals, fromlist, level)
+
+    try:
+        with monkeypatch.context() as import_patch:
+            import_patch.setattr(builtins, '__import__', import_without_valkey)
+            importlib.reload(valkey_client_module)
+
+        assert valkey_client_module.HAS_VALKEY_PACKAGE is False
+        assert 'simulated missing valkey package' in valkey_client_module.VALKEY_IMPORT_ERROR
+
+        with pytest.raises(SystemExit):
+            valkey_client_module.ValkeyClient(module=mock_module)
+
+        mock_module.fail_json.assert_called_once()
+        assert 'valkey' in mock_module.fail_json.call_args.kwargs['msg']
+        assert mock_module.fail_json.call_args.kwargs['exception'] == valkey_client_module.VALKEY_IMPORT_ERROR
+    finally:
+        importlib.reload(valkey_client_module)
 
 
 @pytest.fixture
