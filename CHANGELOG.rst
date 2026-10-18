@@ -4,6 +4,20 @@ Ansible rkozlo.valkey collection changelog Release Notes
 
 .. contents:: Topics
 
+v0.7.0
+======
+
+Release Summary
+---------------
+
+This is minor release of collection. Changes in wait module only.
+
+Minor Changes
+-------------
+
+- valkey_wait - add ``cluster_conditions`` option.
+- valkey_wait - condition values can be prefixed with a comparison operator, for example ``role: "== master"`` or ``role: "==master"``. Supported operators are ``==``, ``!=``, ``>``, ``>=``, ``<`` and ``<=``; ordering operators compare numbers. Multiple spaces in values are reduced to one, and ``info`` reports the ``comparator`` used for every condition.
+
 v0.6.1
 ======
 

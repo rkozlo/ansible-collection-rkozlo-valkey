@@ -1,2 +1,0 @@
-minor_changes:
-  - valkey_wait - add ``cluster_conditions`` option.

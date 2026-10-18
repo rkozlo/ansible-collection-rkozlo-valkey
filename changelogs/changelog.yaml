@@ -138,3 +138,19 @@ releases:
     - 0.6.1.yml
     - user-save-acls-sentinel.yml
     release_date: '2026-10-11'
+  0.7.0:
+    changes:
+      minor_changes:
+      - valkey_wait - add ``cluster_conditions`` option.
+      - 'valkey_wait - condition values can be prefixed with a comparison operator,
+        for example ``role: "== master"`` or ``role: "==master"``. Supported operators
+        are ``==``, ``!=``, ``>``, ``>=``, ``<`` and ``<=``; ordering operators compare
+        numbers. Multiple spaces in values are reduced to one, and ``info`` reports
+        the ``comparator`` used for every condition.'
+      release_summary: This is minor release of collection. Changes in wait module
+        only.
+    fragments:
+    - 0.7.0.yml
+    - wait-cluster-conditions.yml
+    - wait-conditions-comparator.yml
+    release_date: '2026-10-18'
