@@ -84,6 +84,7 @@ jobs:
           - "8.1.10"
           - "9.0.6"
           - "9.1.2"
+          - "9.2.0"
         include:
         - ansible: stable-2.18
           secret_hidden: true
