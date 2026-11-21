@@ -24,6 +24,7 @@ jobs:
           - stable-2.19
           - stable-2.20
           - stable-2.21
+          - stable-2.22
           - devel
 
     steps:
@@ -45,6 +46,7 @@ jobs:
           - stable-2.19
           - stable-2.20
           - stable-2.21
+          - stable-2.22
           - devel
 
     steps:
@@ -77,13 +79,14 @@ jobs:
           - stable-2.19
           - stable-2.20
           - stable-2.21
+          - stable-2.22
           - devel
         valkey_version:
-          - "7.2.14"
-          - "8.0.11"
-          - "8.1.10"
-          - "9.0.6"
-          - "9.1.2"
+          - "7.2.16"
+          - "8.0.13"
+          - "8.1.12"
+          - "9.0.8"
+          - "9.1.4"
           - "9.2.0"
         include:
         - ansible: stable-2.18
@@ -94,6 +97,8 @@ jobs:
           secret_hidden: true
         - ansible: stable-2.21
           secret_hidden: true
+        - ansible: stable-2.22
+          secret_hidden: false
         - ansible: devel
           secret_hidden: false
     steps:
