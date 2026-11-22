@@ -4,6 +4,19 @@ Ansible rkozlo.valkey collection changelog Release Notes
 
 .. contents:: Topics
 
+v0.8.0
+======
+
+Release Summary
+---------------
+
+This is minor release of the collection. Only added support for valkey 9.2.0.
+
+Minor Changes
+-------------
+
+- general - add valkey 9.2 support
+
 v0.7.0
 ======
 

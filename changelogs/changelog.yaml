@@ -154,3 +154,13 @@ releases:
     - wait-cluster-conditions.yml
     - wait-conditions-comparator.yml
     release_date: '2026-10-18'
+  0.8.0:
+    changes:
+      minor_changes:
+      - general - add valkey 9.2 support
+      release_summary: This is minor release of the collection. Only added support
+        for valkey 9.2.0.
+    fragments:
+    - 0.8.0.yml
+    - add-9.2-support.yml
+    release_date: '2026-11-22'
